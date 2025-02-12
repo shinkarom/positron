@@ -8,12 +8,16 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 include_directories(src)
 
+set(SDL_SHARED OFF)
+set(SDL_STATIC ON)
+add_subdirectory(vendor/SDL)
+
 add_executable(${PROJ_NAME}
 	src/sqlite3.c
 	src/main.cpp
 )
 
-#target_link_libraries(${PROJ_NAME} )
+target_link_libraries(${PROJ_NAME} SDL3::SDL3-static)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX
