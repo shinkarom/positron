@@ -9,6 +9,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 include_directories(src)
 
 add_executable(${PROJ_NAME}
+	src/sqlite3.c
 	src/main.cpp
 )
 
