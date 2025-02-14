@@ -12,12 +12,22 @@ set(SDL_SHARED OFF)
 set(SDL_STATIC ON)
 add_subdirectory(vendor/SDL)
 
+add_library(qjs STATIC
+	vendor/quickjs/libbf.c
+	vendor/quickjs/libregexp.c
+	vendor/quickjs/libunicode.c
+	vendor/quickjs/quickjs.c
+	vendor/quickjs/cutils.c
+)
+
+target_include_directories(qjs PUBLIC vendor/quickjs)
+
 add_executable(${PROJ_NAME}
 	src/sqlite3.c
 	src/main.cpp
 )
 
-target_link_libraries(${PROJ_NAME} SDL3::SDL3-static)
+target_link_libraries(${PROJ_NAME} SDL3::SDL3-static qjs)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX

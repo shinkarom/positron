@@ -2,6 +2,7 @@
 
 #include "sqlite3.h"
 #include <SDL3/SDL.h>
+#include <quickjs.h>
 
 int main(int argc, char *argv[])
 {
