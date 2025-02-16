@@ -12,6 +12,11 @@ SDL_Event event;
 constexpr auto msPerTick = 1000 / 60;
 uint64_t targetTime;
 
+sqlite3* db;
+
+JSRuntime* runtime;
+JSContext* context;
+
 int main(int argc, char *argv[])
 {
 	bool done = false;
@@ -21,6 +26,12 @@ int main(int argc, char *argv[])
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	renderer = SDL_CreateRenderer(window, nullptr);
 	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, 500, 500);
+	
+	sqlite3_open(":memory:", &db);
+	
+	runtime = JS_NewRuntime();
+	context = JS_NewContext(runtime);
+	
 	targetTime = SDL_GetTicks() + msPerTick;
 	while(!done) {
 		SDL_RenderClear(renderer);
@@ -37,6 +48,16 @@ int main(int argc, char *argv[])
 		}
 		targetTime = SDL_GetTicks() + msPerTick;
 	}
+	// A small JavaScript program to evaluate
+    const char *js_code = "3+2;";
+
+    // Evaluate the JavaScript code
+    JS_Eval(context, js_code, strlen(js_code), "<input>", JS_EVAL_TYPE_GLOBAL);
+	
+	JS_FreeContext(context);
+	JS_FreeRuntime(runtime);
+	
+	sqlite3_close(db);
 	
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);
