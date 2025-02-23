@@ -7,6 +7,12 @@
 #include <SDL3/SDL.h>
 #include <quickjs.h>
 
+#include "posi.h"
+
+/*
+	The goal is to be able to write RPG games.
+*/
+
 SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* texture;
@@ -17,23 +23,22 @@ uint64_t targetTime;
 constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=44100};
 SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
-constexpr auto audioFramesPerTick = 44100 / 60;
-int16_t audioBuffer[audioFramesPerTick*2];
+
+int16_t* audioBuffer;
 
 sqlite3* db;
 
 JSRuntime* runtime;
 JSContext* context;
 
-constexpr auto screenWidth = 320;
-constexpr auto screenHeight = 240;
-uint32_t frameBuffer[screenWidth * screenHeight];
-
 int main(int argc, char *argv[])
 {
-	for(int i = 0; i< audioFramesPerTick*2; i++) {
-		audioBuffer[i] = 0;
-	}
+	posi_poweron();
+	
+	audioBuffer = posi_audiofeed();
+	
+	posi_save();
+	posi_load();
 	
 	bool done = false;
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD);
@@ -55,6 +60,7 @@ int main(int argc, char *argv[])
 		std::cout<<errMsg<<std::endl;
 		sqlite3_free(errMsg);
 	}
+	
 	// A small JavaScript program to evaluate
     const char *js_code = "3+2;";
 	
@@ -83,13 +89,14 @@ int main(int argc, char *argv[])
 			}
 		}
 		
+		posi_run();
+		
 		SDL_PutAudioStreamData(stream, &audioBuffer, audioFramesPerTick *2 * 2);
 		
 		void* texturePixels;
 		int pitch;
-		frameBuffer[50*screenWidth+50] = 0xFFFFFFFF;
 		SDL_LockTexture(texture, nullptr, &texturePixels, &pitch);
-		memcpy(texturePixels, frameBuffer,screenHeight*pitch);
+		posi_redraw((uint32_t*)texturePixels);
 		SDL_UnlockTexture(texture);
 		SDL_RenderClear(renderer);
 		SDL_RenderTexture(renderer, texture, nullptr, nullptr);
@@ -121,6 +128,8 @@ int main(int argc, char *argv[])
 	JS_FreeRuntime(runtime);
 	
 	sqlite3_close(db);
+	
+	posi_poweroff();
 	
 	SDL_DestroyAudioStream(stream);
 	SDL_CloseAudioDevice(audioID);

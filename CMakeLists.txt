@@ -25,6 +25,7 @@ target_include_directories(qjs PUBLIC vendor/quickjs)
 add_executable(${PROJ_NAME}
 	src/sqlite3.c
 	src/main.cpp
+	src/posi.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 qjs)
