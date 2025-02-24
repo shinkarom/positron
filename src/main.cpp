@@ -3,9 +3,7 @@
 #include <cstring>
 #include <string>
 
-#include "sqlite3.h"
 #include <SDL3/SDL.h>
-#include <quickjs.h>
 
 #include "posi.h"
 
@@ -24,17 +22,11 @@ constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=44
 SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
-int16_t* audioBuffer;
-
-sqlite3* db;
-
-JSRuntime* runtime;
-JSContext* context;
-
 int main(int argc, char *argv[])
 {
 	posi_poweron();
 	
+	int16_t* audioBuffer;
 	audioBuffer = posi_audiofeed();
 	
 	posi_save();
@@ -52,34 +44,6 @@ int main(int argc, char *argv[])
 	audioID = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr);
 	stream = SDL_CreateAudioStream(&spec, nullptr);
 	SDL_BindAudioStream(audioID, stream);
-	
-	sqlite3_open(":memory:", &db);
-	char* errMsg;
-	sqlite3_exec(db, "create table code (scripttext text)",nullptr, nullptr, &errMsg);
-	if(errMsg!=nullptr) {
-		std::cout<<errMsg<<std::endl;
-		sqlite3_free(errMsg);
-	}
-	
-	// A small JavaScript program to evaluate
-    const char *js_code = "3+2;";
-	
-	sqlite3_stmt* stmt1;
-	auto res = sqlite3_prepare_v2(db, "insert into code values (?)", -1, &stmt1, nullptr);
-	if(res) {
-		std::cout<<"error "<<res<<std::endl;
-	} else {
-		sqlite3_bind_text(stmt1, 1, js_code, strlen(js_code), SQLITE_STATIC);
-		res = sqlite3_step(stmt1);
-		if(res != SQLITE_DONE) {
-			std::cout<<"error "<<res<<std::endl;
-		}
-	}
-	sqlite3_finalize(stmt1);
-	
-	
-	runtime = JS_NewRuntime();
-	context = JS_NewContext(runtime);
 	
 	targetTime = SDL_GetTicks() + msPerTick;
 	while(!done) {
@@ -107,27 +71,6 @@ int main(int argc, char *argv[])
 		}
 		targetTime = SDL_GetTicks() + msPerTick;
 	}
-	std::string retrieved_code;
-	sqlite3_stmt* stmt2;
-	res = sqlite3_prepare_v2(db, "select scripttext from code", -1, &stmt2, nullptr);
-	if(res) {
-		std::cout<<"error "<<res<<std::endl;
-	} else {
-		res = sqlite3_step(stmt2);
-		if(res != SQLITE_ROW) {
-			std::cout<<"error "<<res<<std::endl;
-		}
-		retrieved_code = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt2, 0)));
-	}
-	sqlite3_finalize(stmt2);
-
-    // Evaluate the JavaScript code
-    JS_Eval(context, retrieved_code.c_str(), strlen(retrieved_code.c_str()), "<input>", JS_EVAL_TYPE_GLOBAL);
-	
-	JS_FreeContext(context);
-	JS_FreeRuntime(runtime);
-	
-	sqlite3_close(db);
 	
 	posi_poweroff();
 	
