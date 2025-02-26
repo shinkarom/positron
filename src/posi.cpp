@@ -4,9 +4,9 @@
 #include <iostream>
 #include <cstring>
 
-#define SQLITE_ENABLE_COLUMN_METADATA
 #include "sqlite3.h"
 #include <quickjs.h>
+#include <SQLiteCpp/SQLiteCpp.h>
 
 int16_t soundBuffer[audioFramesPerTick*2];
 int32_t frameBuffer[screenWidth * screenHeight];

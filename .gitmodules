@@ -1,3 +1,6 @@
 [submodule "vendor/SDL"]
 	path = vendor/SDL
 	url = https://github.com/libsdl-org/SDL
+[submodule "vendor/SQLiteCpp"]
+	path = vendor/SQLiteCpp
+	url = https://github.com/SRombauts/SQLiteCpp.git
