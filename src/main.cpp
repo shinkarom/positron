@@ -4,11 +4,12 @@
 #include <string>
 
 #include <SDL3/SDL.h>
+#include "argparse.hpp"
 
 #include "posi.h"
 
 /*
-	The goal is to be able to write RPG games.
+	The goal is to be able to write RPG games, racing games, platformers, strategy games.
 */
 
 SDL_Window* window;
@@ -33,7 +34,7 @@ int main(int argc, char *argv[])
 	posi_load();
 	
 	bool done = false;
-	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD);
+	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	window = SDL_CreateWindow("Positron", screenWidth*3, screenHeight*3, 
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -52,10 +53,12 @@ int main(int argc, char *argv[])
 				done = true;
 			}
 		}
-		
-		posi_run();
-		
-		SDL_PutAudioStreamData(stream, &audioBuffer, audioFramesPerTick *2 * 2);
+		 
+		 if(!posi_run()) {
+			 done = true;
+		 }
+
+		SDL_PutAudioStreamData(stream, audioBuffer, audioFramesPerTick *2 * 2);
 		
 		void* texturePixels;
 		int pitch;
