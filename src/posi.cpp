@@ -3,10 +3,12 @@
 #include <cstdint>
 #include <iostream>
 #include <cstring>
+#include <fstream>
+#include <vector>
 
 #include "sqlite3.h"
 #include <quickjs.h>
-#include <SQLiteCpp/SQLiteCpp.h>
+#include "m4p.h"
 
 int16_t soundBuffer[audioFramesPerTick*2];
 int32_t frameBuffer[screenWidth * screenHeight];
@@ -15,6 +17,12 @@ sqlite3* db;
 
 JSRuntime* runtime;
 JSContext* context;
+
+std::vector<char> trackBuffer;
+
+int API_BgColor = 0xFF000000;
+
+int gameState;
 
 void posi_poweron() {
 	sqlite3_open(":memory:", &db);
@@ -27,6 +35,8 @@ void posi_poweron() {
 	
 	runtime = JS_NewRuntime();
 	context = JS_NewContext(runtime);
+	
+	gameState = POSI_STATE_GAME;
 }
 
 void posi_poweroff() {
@@ -37,8 +47,9 @@ void posi_poweroff() {
 }
 
 bool callTick() {
-	JSValue global_obj, func, result;
-    
+    JSValue global_obj, func, result, bgColorVal;
+     // Host variable to store the JS value
+
     // Get the global object
     global_obj = JS_GetGlobalObject(context);
 
@@ -60,22 +71,39 @@ bool callTick() {
     if (JS_IsException(result)) {
         JSValue exception = JS_GetException(context);
         const char *error_str = JS_ToCString(context, exception);
-        fprintf(stderr, "JS Exception: %s\n", error_str);
-        JS_FreeCString(context, error_str);
+
+        if (error_str) { // Check to avoid null pointer dereference
+            fprintf(stderr, "JS Exception: %s\n", error_str);
+            JS_FreeCString(context, error_str);
+        } else {
+            fprintf(stderr, "JS Exception occurred, but could not retrieve message.\n");
+        }
+
         JS_FreeValue(context, exception);
-		JS_FreeValue(context, result);
-		JS_FreeValue(context, func);
-		JS_FreeValue(context, global_obj);
-		return false;
+        JS_FreeValue(context, func);
+        JS_FreeValue(context, global_obj);
+        return false;
+    }
+
+    // Get the variable "API_BgColor" from the global object
+    bgColorVal = JS_GetPropertyStr(context, global_obj, "API_BgColor");
+
+    // Check if the property exists and is a number
+    if (JS_IsNumber(bgColorVal)) {
+        JS_ToInt32(context, &API_BgColor, bgColorVal); // Convert to int
+		API_BgColor = 0xFF000000 | (API_BgColor & 0x00FFFFFF);
+       // printf("API_BgColor updated to: %d\n", API_BgColor);
     } else {
-        
+        //fprintf(stderr, "Error: API_BgColor is not a valid number.\n");
     }
 
     // Cleanup
+    JS_FreeValue(context, bgColorVal);
     JS_FreeValue(context, result);
     JS_FreeValue(context, func);
     JS_FreeValue(context, global_obj);
-	return true;
+
+    return true;
 }
 
 bool posi_run() {
@@ -83,9 +111,8 @@ bool posi_run() {
 		soundBuffer[i] = 0;
 	}
 	for(int i = 0; i<screenWidth*screenHeight;i++){
-		frameBuffer[i] = 0xFF000000;
+		frameBuffer[i] = API_BgColor;
 	}
-	frameBuffer[50*screenWidth+50] = 0xFFFFFFFF;
 	return callTick();
 }
 
@@ -107,12 +134,12 @@ void posi_load() {
     // Evaluate the JavaScript code
     JS_Eval(context, retrieved_code.c_str(), strlen(retrieved_code.c_str()), "<input>", JS_EVAL_TYPE_GLOBAL);
 	
-	
+	loadTrack();
 }
 
 void posi_save() {
 	// A small JavaScript program to evaluate
-    const char *js_code = "function API_Tick() {}";
+    const char *js_code = "function API_Tick() { API_BgColor = 0xFF0000FF;}";
 	
 	sqlite3_stmt* stmt1;
 	auto res = sqlite3_prepare_v2(db, "insert into code values (?)", -1, &stmt1, nullptr);
@@ -134,4 +161,8 @@ int16_t* posi_audiofeed() {
 
 void posi_redraw(uint32_t* buffer) {
 	memcpy(buffer, frameBuffer,screenHeight*screenWidth*4);
+}
+
+void posi_change_state(int newState) {
+	
 }

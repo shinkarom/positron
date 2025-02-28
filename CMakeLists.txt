@@ -12,8 +12,6 @@ set(SDL_SHARED ON)
 set(SDL_STATIC OFF)
 add_subdirectory(vendor/SDL)
 
-add_subdirectory(vendor/SQLiteCpp)
-
 add_library(qjs STATIC
 	vendor/quickjs/libbf.c
 	vendor/quickjs/libregexp.c
@@ -26,11 +24,12 @@ target_include_directories(qjs PUBLIC vendor/quickjs)
 
 add_executable(${PROJ_NAME}
 	src/sqlite3.c
+	src/m4p.c
 	src/main.cpp
 	src/posi.cpp
 )
 
-target_link_libraries(${PROJ_NAME} SDL3::SDL3 SQLiteCpp qjs)
+target_link_libraries(${PROJ_NAME} SDL3::SDL3 qjs)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX

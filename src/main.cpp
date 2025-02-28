@@ -51,6 +51,10 @@ int main(int argc, char *argv[])
 		while(SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT) {
 				done = true;
+			} else if (event.type == SDL_EVENT_KEY_DOWN) {
+				// TODO
+			} else if (event.type == SDL_EVENT_KEY_UP) {
+				// TODO
 			}
 		}
 		 
