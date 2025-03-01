@@ -23,15 +23,43 @@ constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=44
 SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
+void destroyPosiSDL() {
+	posi_poweroff();
+	
+	SDL_DestroyAudioStream(stream);
+	SDL_CloseAudioDevice(audioID);
+	
+	SDL_DestroyTexture(texture);
+	SDL_DestroyRenderer(renderer);
+	SDL_DestroyWindow(window);	
+	SDL_Quit();
+}
+
 int main(int argc, char *argv[])
 {
+	argparse::ArgumentParser program("Positron");
+	program.add_argument("file")
+		.nargs(argparse::nargs_pattern::optional)
+		.default_value(std::string("World"));
+	try {
+		program.parse_args(argc, argv);
+	  }
+	  catch (const std::exception& err) {
+		std::cerr << err.what() << std::endl;
+		std::cerr << program;
+		return 1;
+	  }
+	
 	posi_poweron();
 	
 	int16_t* audioBuffer;
 	audioBuffer = posi_audiofeed();
+	auto fileName = program.get<std::string>("file");
 	
-	posi_save();
-	posi_load();
+	if (!posi_load(fileName)){
+		destroyPosiSDL();
+		return 1;
+	}
 	
 	bool done = false;
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
@@ -79,14 +107,7 @@ int main(int argc, char *argv[])
 		targetTime = SDL_GetTicks() + msPerTick;
 	}
 	
-	posi_poweroff();
+	destroyPosiSDL();
 	
-	SDL_DestroyAudioStream(stream);
-	SDL_CloseAudioDevice(audioID);
-	
-	SDL_DestroyTexture(texture);
-	SDL_DestroyRenderer(renderer);
-	SDL_DestroyWindow(window);	
-	SDL_Quit();
 	return 0;
 }

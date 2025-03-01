@@ -24,15 +24,40 @@ int API_BgColor = 0xFF000000;
 
 int gameState;
 
-void posi_poweron() {
-	sqlite3_open(":memory:", &db);
-	char* errMsg;
-	sqlite3_exec(db, "create table code (scripttext text)",nullptr, nullptr, &errMsg);
-	if(errMsg!=nullptr) {
-		std::cout<<errMsg<<std::endl;
-		sqlite3_free(errMsg);
-	}
-	
+void printJSException() {
+    // Get the exception value
+    JSValue exception = JS_GetException(context);
+    
+    // Try to retrieve the error message
+    const char *error_str = JS_ToCString(context, exception);
+    if (error_str) {
+        // Print the exception message
+        fprintf(stderr, "JS Exception: %s\n", error_str);
+        JS_FreeCString(context, error_str);
+    } else {
+        // If we couldn't retrieve the error message, log a fallback message
+        fprintf(stderr, "JS Exception occurred, but could not retrieve message.\n");
+    }
+
+    // Try to retrieve the stack trace, if it exists
+    JSValue stack_val = JS_GetPropertyStr(context, exception, "stack");
+    if (!JS_IsUndefined(stack_val)) {
+        // If the stack property exists, retrieve and print it
+        const char *stack_str = JS_ToCString(context, stack_val);
+        if (stack_str) {
+            std::cerr << "Stack Trace:\n" << stack_str << std::endl;
+            JS_FreeCString(context, stack_str);
+        } else {
+            std::cerr << "Stack trace exists, but couldn't retrieve its string.\n";
+        }
+    }
+
+    // Free the exception value to avoid memory leaks
+    JS_FreeValue(context, exception);
+}
+
+
+void posi_poweron() {	
 	runtime = JS_NewRuntime();
 	context = JS_NewContext(runtime);
 	
@@ -69,17 +94,7 @@ bool callTick() {
 
     // Check for exceptions
     if (JS_IsException(result)) {
-        JSValue exception = JS_GetException(context);
-        const char *error_str = JS_ToCString(context, exception);
-
-        if (error_str) { // Check to avoid null pointer dereference
-            fprintf(stderr, "JS Exception: %s\n", error_str);
-            JS_FreeCString(context, error_str);
-        } else {
-            fprintf(stderr, "JS Exception occurred, but could not retrieve message.\n");
-        }
-
-        JS_FreeValue(context, exception);
+		printJSException();
         JS_FreeValue(context, func);
         JS_FreeValue(context, global_obj);
         return false;
@@ -107,19 +122,27 @@ bool callTick() {
 }
 
 bool posi_run() {
-	for(int i = 0; i < audioFramesPerTick*2; i++) {
-		soundBuffer[i] = 0;
+	switch(gameState) {
+		case POSI_STATE_GAME:
+			return posi_state_game_run();
+		default:
+			return false;
 	}
-	for(int i = 0; i<screenWidth*screenHeight;i++){
-		frameBuffer[i] = API_BgColor;
-	}
-	return callTick();
 }
 
-void posi_load() {
+bool posi_load(std::string fileName) {
+	if(db) {
+		sqlite3_close(db);
+	}
+	auto res = sqlite3_open(fileName.c_str(), &db);
+	if (res != SQLITE_OK) {
+        std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
+        return false;
+    }
+	
 	std::string retrieved_code;
 	sqlite3_stmt* stmt2;
-	auto res = sqlite3_prepare_v2(db, "select scripttext from code", -1, &stmt2, nullptr);
+	res = sqlite3_prepare_v2(db, "select scripttext from code", -1, &stmt2, nullptr);
 	if(res) {
 		std::cout<<"error "<<res<<std::endl;
 	} else {
@@ -132,27 +155,13 @@ void posi_load() {
 	sqlite3_finalize(stmt2);
 
     // Evaluate the JavaScript code
-    JS_Eval(context, retrieved_code.c_str(), strlen(retrieved_code.c_str()), "<input>", JS_EVAL_TYPE_GLOBAL);
-	
-	loadTrack();
-}
-
-void posi_save() {
-	// A small JavaScript program to evaluate
-    const char *js_code = "function API_Tick() { API_BgColor = 0xFF0000FF;}";
-	
-	sqlite3_stmt* stmt1;
-	auto res = sqlite3_prepare_v2(db, "insert into code values (?)", -1, &stmt1, nullptr);
-	if(res) {
-		std::cout<<"error "<<res<<std::endl;
-	} else {
-		sqlite3_bind_text(stmt1, 1, js_code, strlen(js_code), SQLITE_STATIC);
-		res = sqlite3_step(stmt1);
-		if(res != SQLITE_DONE) {
-			std::cout<<"error "<<res<<std::endl;
-		}
+    auto r = JS_Eval(context, retrieved_code.c_str(), strlen(retrieved_code.c_str()), "<main>", JS_EVAL_TYPE_GLOBAL);
+	if(JS_IsException(r)){
+		printJSException();
+		return false;
 	}
-	sqlite3_finalize(stmt1);
+	
+	return true;
 }
 
 int16_t* posi_audiofeed() {
@@ -165,4 +174,14 @@ void posi_redraw(uint32_t* buffer) {
 
 void posi_change_state(int newState) {
 	
+}
+
+bool posi_state_game_run() {
+	for(int i = 0; i < audioFramesPerTick*2; i++) {
+		soundBuffer[i] = 0;
+	}
+	for(int i = 0; i<screenWidth*screenHeight;i++){
+		frameBuffer[i] = API_BgColor;
+	}
+	return callTick();
 }
