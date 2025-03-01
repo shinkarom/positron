@@ -5,10 +5,12 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
+#include <variant>
 
 #include "sqlite3.h"
 #include <quickjs.h>
 #include "m4p.h"
+#include "miniz.h"
 
 int16_t soundBuffer[audioFramesPerTick*2];
 int32_t frameBuffer[screenWidth * screenHeight];
@@ -23,6 +25,24 @@ std::vector<char> trackBuffer;
 int API_BgColor = 0xFF000000;
 
 int gameState;
+
+std::vector<uint8_t> decompress(const std::vector<uint8_t>& data) {
+
+    // Prepare a buffer for decompression (initially 1MB)
+    std::vector<uint8_t> decompressedData(1024 * 1024);  
+    mz_ulong decompressedSize = decompressedData.size();
+
+    // Decompress using miniz
+    size_t result = mz_uncompress(decompressedData.data(), &decompressedSize, data.data(), data.size());
+    
+    if (result != MZ_OK) {
+        throw std::runtime_error("Decompression failed!");
+    }
+
+    decompressedData.resize(decompressedSize);  // Resize to actual decompressed size
+	
+	return decompressedData;
+}
 
 void printJSException() {
     // Get the exception value
@@ -134,24 +154,38 @@ bool posi_load(std::string fileName) {
 	if(db) {
 		sqlite3_close(db);
 	}
-	auto res = sqlite3_open(fileName.c_str(), &db);
-	if (res != SQLITE_OK) {
+
+	if (sqlite3_open(fileName.c_str(), &db) != SQLITE_OK) {
         std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
         return false;
     }
 	
 	std::string retrieved_code;
 	sqlite3_stmt* stmt2;
-	res = sqlite3_prepare_v2(db, "select scripttext from code", -1, &stmt2, nullptr);
-	if(res) {
-		std::cout<<"error "<<res<<std::endl;
-	} else {
-		res = sqlite3_step(stmt2);
-		if(res != SQLITE_ROW) {
-			std::cout<<"error "<<res<<std::endl;
-		}
-		retrieved_code = std::string(reinterpret_cast<const char*>(sqlite3_column_text(stmt2, 0)));
+	if(sqlite3_prepare_v2(db, "select data, compressed from code", -1, &stmt2, nullptr) != SQLITE_OK) {
+		std::cout<<"error "<<sqlite3_errmsg(db)<<std::endl;
+		return false;
+	} 
+
+	if(sqlite3_step(stmt2) != SQLITE_ROW) {
+		std::cout<<"error "<<sqlite3_errmsg(db)<<std::endl;
 	}
+	
+	const void* blobData = sqlite3_column_blob(stmt2, 0);
+    int blobSize = sqlite3_column_bytes(stmt2, 0);
+    bool isCompressed = sqlite3_column_int(stmt2, 1);
+	
+	std::vector<uint8_t> storedData(static_cast<const uint8_t*>(blobData), 
+                                        static_cast<const uint8_t*>(blobData) + blobSize);
+
+	if(isCompressed) {
+		auto result = decompress(storedData);  // true = return as string
+		retrieved_code = std::string(result.begin(), result.end());
+	} else {
+		retrieved_code = std::string(storedData.begin(), storedData.end());
+	}
+	
+	
 	sqlite3_finalize(stmt2);
 
     // Evaluate the JavaScript code
