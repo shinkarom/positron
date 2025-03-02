@@ -28,6 +28,7 @@ add_executable(${PROJ_NAME}
 	src/miniz.c
 	src/main.cpp
 	src/posi.cpp
+	src/gpu.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 qjs)

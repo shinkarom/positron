@@ -12,7 +12,6 @@
 #include "miniz.h"
 
 std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
-std::vector<int32_t> frameBuffer(screenWidth * screenHeight);
 
 sqlite3* db;
 
@@ -71,13 +70,6 @@ void printJSException() {
 
     // Free the exception value to avoid memory leaks
     JS_FreeValue(context, exception);
-}
-
-void posiAPICls(uint32_t color) {
-	color = 0xFF000000 | (color & 0x00FFFFFF);
-	for(int i = 0; i < screenWidth * screenHeight; i++) {
-		frameBuffer[i] = color;
-	}
 }
 
 static JSValue js_api_cls(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
@@ -224,10 +216,6 @@ bool posiLoad(std::string fileName) {
 
 int16_t* posiAudiofeed() {
 	return soundBuffer.data();
-}
-
-void posiRedraw(uint32_t* buffer) {
-	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
 }
 
 void posiChangeState(int newState) {

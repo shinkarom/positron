@@ -3,6 +3,8 @@
 #include <cstdint>
 #include <string>
 
+constexpr auto maxScreenWidth = 256;
+constexpr auto maxScreenHeight = 256;
 constexpr auto screenWidth = 256;
 constexpr auto screenHeight = 256;
 constexpr auto audioFramesPerTick = 44100 / 60;
