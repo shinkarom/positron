@@ -5,15 +5,14 @@
 #include <cstring>
 #include <fstream>
 #include <vector>
-#include <variant>
 
 #include "sqlite3.h"
 #include <quickjs.h>
 #include "m4p.h"
 #include "miniz.h"
 
-int16_t soundBuffer[audioFramesPerTick*2];
-int32_t frameBuffer[screenWidth * screenHeight];
+std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
+std::vector<int32_t> frameBuffer(screenWidth * screenHeight);
 
 sqlite3* db;
 
@@ -21,8 +20,6 @@ JSRuntime* runtime;
 JSContext* context;
 
 std::vector<char> trackBuffer;
-
-int API_BgColor = 0xFF000000;
 
 int gameState;
 
@@ -76,15 +73,51 @@ void printJSException() {
     JS_FreeValue(context, exception);
 }
 
+void posiAPICls(uint32_t color) {
+	color = 0xFF000000 | (color & 0x00FFFFFF);
+	for(int i = 0; i < screenWidth * screenHeight; i++) {
+		frameBuffer[i] = color;
+	}
+}
 
-void posi_poweron() {	
+static JSValue js_api_cls(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int32_t color;
+
+    if (argc < 1) {
+        fprintf(stderr, "Error: API_cls requires at least one argument (color).\n");
+        return JS_EXCEPTION; // Indicate an error to JavaScript
+    }
+
+    if (!JS_IsNumber(argv[0])) {
+        fprintf(stderr, "Error: API_cls argument 'color' must be a number.\n");
+        return JS_EXCEPTION; // Indicate an error to JavaScript
+    }
+
+    if (JS_ToInt32(ctx, &color, argv[0])) {
+        return JS_EXCEPTION; // Error converting argument to integer
+    }
+
+	posiAPICls(color);
+
+    return JS_UNDEFINED; // Return undefined to JavaScript (no return value expected)
+}
+
+void posiPoweron() {	
 	runtime = JS_NewRuntime();
 	context = JS_NewContext(runtime);
+	
+	JSValue global_obj = JS_GetGlobalObject(context);
+
+    /* Define API_cls function in global object */
+    JS_SetPropertyStr(context, global_obj, "API_cls",
+                      JS_NewCFunction(context, js_api_cls, "API_cls", 1)); // "API_cls" is function name in JS
+
+    JS_FreeValue(context, global_obj);
 	
 	gameState = POSI_STATE_GAME;
 }
 
-void posi_poweroff() {
+void posiPoweroff() {
 	JS_FreeContext(context);
 	JS_FreeRuntime(runtime);
 	
@@ -123,15 +156,6 @@ bool callTick() {
     // Get the variable "API_BgColor" from the global object
     bgColorVal = JS_GetPropertyStr(context, global_obj, "API_BgColor");
 
-    // Check if the property exists and is a number
-    if (JS_IsNumber(bgColorVal)) {
-        JS_ToInt32(context, &API_BgColor, bgColorVal); // Convert to int
-		API_BgColor = 0xFF000000 | (API_BgColor & 0x00FFFFFF);
-       // printf("API_BgColor updated to: %d\n", API_BgColor);
-    } else {
-        //fprintf(stderr, "Error: API_BgColor is not a valid number.\n");
-    }
-
     // Cleanup
     JS_FreeValue(context, bgColorVal);
     JS_FreeValue(context, result);
@@ -141,16 +165,16 @@ bool callTick() {
     return true;
 }
 
-bool posi_run() {
+bool posiRun() {
 	switch(gameState) {
 		case POSI_STATE_GAME:
-			return posi_state_game_run();
+			return posiStateGameRun();
 		default:
 			return false;
 	}
 }
 
-bool posi_load(std::string fileName) {
+bool posiLoad(std::string fileName) {
 	if(db) {
 		sqlite3_close(db);
 	}
@@ -198,24 +222,32 @@ bool posi_load(std::string fileName) {
 	return true;
 }
 
-int16_t* posi_audiofeed() {
-	return &soundBuffer[0];
+int16_t* posiAudiofeed() {
+	return soundBuffer.data();
 }
 
-void posi_redraw(uint32_t* buffer) {
-	memcpy(buffer, frameBuffer,screenHeight*screenWidth*4);
+void posiRedraw(uint32_t* buffer) {
+	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
 }
 
-void posi_change_state(int newState) {
-	
+void posiChangeState(int newState) {
+	switch(gameState) {
+		case POSI_STATE_GAME:
+			break;
+		default:
+			break;
+	}
+	switch(newState) {
+		case POSI_STATE_GAME:
+			break;
+		default:
+			break;
+	}
 }
 
-bool posi_state_game_run() {
+bool posiStateGameRun() {
 	for(int i = 0; i < audioFramesPerTick*2; i++) {
 		soundBuffer[i] = 0;
-	}
-	for(int i = 0; i<screenWidth*screenHeight;i++){
-		frameBuffer[i] = API_BgColor;
 	}
 	return callTick();
 }

@@ -24,7 +24,7 @@ SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
 void destroyPosiSDL() {
-	posi_poweroff();
+	posiPoweroff();
 	
 	SDL_DestroyAudioStream(stream);
 	SDL_CloseAudioDevice(audioID);
@@ -50,13 +50,13 @@ int main(int argc, char *argv[])
 		return 1;
 	  }
 	
-	posi_poweron();
+	posiPoweron();
 	
 	int16_t* audioBuffer;
-	audioBuffer = posi_audiofeed();
+	audioBuffer = posiAudiofeed();
 	auto fileName = program.get<std::string>("file");
 	
-	if (!posi_load(fileName)){
+	if (!posiLoad(fileName)){
 		destroyPosiSDL();
 		return 1;
 	}
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 			}
 		}
 		 
-		 if(!posi_run()) {
+		 if(!posiRun()) {
 			 done = true;
 		 }
 
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
 		void* texturePixels;
 		int pitch;
 		SDL_LockTexture(texture, nullptr, &texturePixels, &pitch);
-		posi_redraw((uint32_t*)texturePixels);
+		posiRedraw((uint32_t*)texturePixels);
 		SDL_UnlockTexture(texture);
 		SDL_RenderClear(renderer);
 		SDL_RenderTexture(renderer, texture, nullptr, nullptr);
