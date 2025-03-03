@@ -6,10 +6,10 @@
 #include <fstream>
 #include <vector>
 
-#include "sqlite3.h"
+#include "thirdparty/sqlite3.h"
 #include <quickjs.h>
-#include "m4p.h"
-#include "miniz.h"
+#include "thirdparty/m4p.h"
+#include "thirdparty/miniz.h"
 
 std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
 
@@ -178,7 +178,7 @@ bool posiLoad(std::string fileName) {
 	
 	std::string retrieved_code;
 	sqlite3_stmt* stmt2;
-	if(sqlite3_prepare_v2(db, "select data, compressed from code", -1, &stmt2, nullptr) != SQLITE_OK) {
+	if(sqlite3_prepare_v2(db, "select data, compressed from code where name='MAIN'", -1, &stmt2, nullptr) != SQLITE_OK) {
 		std::cout<<"error "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
 	} 

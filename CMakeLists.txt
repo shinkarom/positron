@@ -23,12 +23,13 @@ add_library(qjs STATIC
 target_include_directories(qjs PUBLIC vendor/quickjs)
 
 add_executable(${PROJ_NAME}
-	src/sqlite3.c
-	src/m4p.c
-	src/miniz.c
+	src/thirdparty/sqlite3.c
+	src/thirdparty/m4p.c
+	src/thirdparty/miniz.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
+	src/input.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 qjs)

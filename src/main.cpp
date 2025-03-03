@@ -4,7 +4,7 @@
 #include <string>
 
 #include <SDL3/SDL.h>
-#include "argparse.hpp"
+#include "thirdparty/argparse.hpp"
 
 #include "posi.h"
 
@@ -38,11 +38,11 @@ void destroyPosiSDL() {
 SDL_FRect calcRect(SDL_FRect srcRect) {
 	int windowWidth, windowHeight;
     SDL_GetCurrentRenderOutputSize(renderer, &windowWidth, &windowHeight);
-	float scaleX = (float)windowWidth / screenWidth;
-    float scaleY = (float)windowHeight / screenHeight;
+	float scaleX = (float)windowWidth / srcRect.w;
+    float scaleY = (float)windowHeight / srcRect.h;
 	float scale = scaleX < scaleY ? scaleX : scaleY;
-    float destWidth = screenWidth * scale;
-    float destHeight = screenHeight * scale;
+    float destWidth = srcRect.w * scale;
+    float destHeight = srcRect.h * scale;
     float destX = (windowWidth - destWidth) / 2; // Center horizontally
     float destY = (windowHeight - destHeight) / 2; // Center vertically
 	SDL_FRect destRect;
@@ -52,6 +52,44 @@ SDL_FRect calcRect(SDL_FRect srcRect) {
     destRect.h = destHeight;
 	return destRect;
 }
+
+constexpr SDL_Scancode inputScancodes[numInputButtons] = {
+	SDL_SCANCODE_Z,
+	SDL_SCANCODE_X,
+	SDL_SCANCODE_C,
+	SDL_SCANCODE_V,
+	SDL_SCANCODE_B,
+	SDL_SCANCODE_N,
+	SDL_SCANCODE_M,
+	SDL_SCANCODE_COMMA,
+	
+	SDL_SCANCODE_A,
+	SDL_SCANCODE_S,
+	SDL_SCANCODE_D,
+	SDL_SCANCODE_F,
+	SDL_SCANCODE_G,
+	SDL_SCANCODE_H,
+	SDL_SCANCODE_J,
+	SDL_SCANCODE_K,
+	
+	SDL_SCANCODE_Q,
+	SDL_SCANCODE_W,
+	SDL_SCANCODE_E,
+	SDL_SCANCODE_R,
+	SDL_SCANCODE_T,
+	SDL_SCANCODE_Y,
+	SDL_SCANCODE_U,
+	SDL_SCANCODE_I,
+	
+	SDL_SCANCODE_1,
+	SDL_SCANCODE_2,
+	SDL_SCANCODE_3,
+	SDL_SCANCODE_4,
+	SDL_SCANCODE_5,
+	SDL_SCANCODE_6,
+	SDL_SCANCODE_7,
+	SDL_SCANCODE_8,
+};
 
 int main(int argc, char *argv[])
 {
@@ -97,14 +135,14 @@ int main(int argc, char *argv[])
 	SDL_BindAudioStream(audioID, stream);
 	
 	targetTime = SDL_GetTicks() + msPerTick;
-	while(!done) {
+	while(!done) {			
 		while(SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT) {
 				done = true;
 			} else if (event.type == SDL_EVENT_KEY_DOWN) {
-				// TODO
+				
 			} else if (event.type == SDL_EVENT_KEY_UP) {
-				// TODO
+				
 			} else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 				texRect.x = 0;
 				texRect.y = 0;
@@ -113,6 +151,13 @@ int main(int argc, char *argv[])
 				winRect = calcRect(texRect);
 			}
 		}
+		 
+		 for(int i = 0; i<numInputButtons; i++) {
+			 auto kbState = SDL_GetKeyboardState(nullptr);
+			for (int i = 0; i < numInputButtons; i++) {
+				posiUpdateButton(i, kbState[inputScancodes[i]]);
+			}
+		 }
 		 
 		 if(!posiRun()) {
 			 done = true;
