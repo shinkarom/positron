@@ -24,5 +24,8 @@ void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
 
 void posiUpdateButton(int buttonNumber, bool state);
+bool API_isPressed(int buttonNumber);
+bool API_isJustPressed(int buttonNumber);
+bool API_isJustReleased(int buttonNumber);
 
 bool posiStateGameRun();

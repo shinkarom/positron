@@ -76,22 +76,91 @@ static JSValue js_api_cls(JSContext *ctx, JSValueConst this_val, int argc, JSVal
     int32_t color;
 
     if (argc < 1) {
-        fprintf(stderr, "Error: API_cls requires at least one argument (color).\n");
-        return JS_EXCEPTION; // Indicate an error to JavaScript
+	   return JS_ThrowPlainError(ctx, "API_cls requires at least one argument (color).");
     }
 
     if (!JS_IsNumber(argv[0])) {
-        fprintf(stderr, "Error: API_cls argument 'color' must be a number.\n");
-        return JS_EXCEPTION; // Indicate an error to JavaScript
+        return JS_ThrowPlainError(ctx, "API_cls argument 'color' must be a number.");
     }
 
-    if (JS_ToInt32(ctx, &color, argv[0])) {
-        return JS_EXCEPTION; // Error converting argument to integer
-    }
-
+    if(JS_ToInt32(ctx, &color, argv[0])) {
+		 return JS_ThrowPlainError(ctx, "Failed to convert argument 'color' to an integer.");
+	}
+	
 	posiAPICls(color);
 
-    return JS_UNDEFINED; // Return undefined to JavaScript (no return value expected)
+    return JS_UNDEFINED; 
+}
+
+static JSValue js_api_isPressed(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int32_t buttonNumber;
+
+    if (argc != 1) {
+        return JS_ThrowTypeError(ctx, "API_isPressed requires exactly one argument (buttonNumber).");
+    }
+
+    if (!JS_IsNumber(argv[0])) {
+        return JS_ThrowTypeError(ctx, "API_isPressed argument 'buttonNumber' must be a number.");
+    }
+
+    if (JS_ToInt32(ctx, &buttonNumber, argv[0])) {
+        return JS_ThrowPlainError(ctx, "Failed to convert argument 'buttonNumber' to an integer.");
+    }
+
+    if (buttonNumber < 0 || buttonNumber >= numInputButtons) {
+        return JS_ThrowRangeError(ctx, "API_isPressed: buttonNumber is out of range (0 to %d).", numInputButtons - 1);
+    }
+
+    bool result = API_isPressed(buttonNumber); // Call the native C function
+    return JS_NewBool(ctx, result);           // Convert C bool to JS boolean and return
+}
+
+// --- Binding for API_isJustPressed ---
+static JSValue js_api_isJustPressed(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int32_t buttonNumber;
+
+    if (argc != 1) {
+        return JS_ThrowTypeError(ctx, "API_isJustPressed requires exactly one argument (buttonNumber).");
+    }
+
+    if (!JS_IsNumber(argv[0])) {
+        return JS_ThrowTypeError(ctx, "API_isJustPressed argument 'buttonNumber' must be a number.");
+    }
+
+    if (JS_ToInt32(ctx, &buttonNumber, argv[0])) {
+        return JS_ThrowPlainError(ctx, "Failed to convert argument 'buttonNumber' to an integer.");
+    }
+
+    if (buttonNumber < 0 || buttonNumber >= numInputButtons) {
+        return JS_ThrowRangeError(ctx, "API_isJustPressed: buttonNumber is out of range (0 to %d).", numInputButtons - 1);
+    }
+
+    bool result = API_isJustPressed(buttonNumber); // Call the native C function
+    return JS_NewBool(ctx, result);             // Convert C bool to JS boolean and return
+}
+
+// --- Binding for API_isJustReleased ---
+static JSValue js_api_isJustReleased(JSContext *ctx, JSValueConst this_val, int argc, JSValueConst *argv) {
+    int32_t buttonNumber;
+	
+    if (argc != 1) {
+        return JS_ThrowTypeError(ctx, "API_isJustReleased requires exactly one argument (buttonNumber).");
+    }
+
+    if (!JS_IsNumber(argv[0])) {
+        return JS_ThrowTypeError(ctx, "API_isJustReleased argument 'buttonNumber' must be a number.");
+    }
+
+    if (JS_ToInt32(ctx, &buttonNumber, argv[0])) {
+        return JS_ThrowPlainError(ctx, "Failed to convert argument 'buttonNumber' to an integer.");
+    }
+	
+    if (buttonNumber < 0 || buttonNumber >= numInputButtons) {
+        return JS_ThrowRangeError(ctx, "API_isJustReleased: buttonNumber is out of range (0 to %d).", numInputButtons - 1);
+    }
+
+    bool result = API_isJustReleased(buttonNumber); // Call the native C function
+    return JS_NewBool(ctx, result);              // Convert C bool to JS boolean and return
 }
 
 void posiPoweron() {	
@@ -103,6 +172,9 @@ void posiPoweron() {
     /* Define API_cls function in global object */
     JS_SetPropertyStr(context, global_obj, "API_cls",
                       JS_NewCFunction(context, js_api_cls, "API_cls", 1)); // "API_cls" is function name in JS
+	JS_SetPropertyStr(context, global_obj, "API_isPressed", JS_NewCFunction(context, js_api_isPressed, "API_isPressed", 1));
+    JS_SetPropertyStr(context, global_obj, "API_isJustPressed", JS_NewCFunction(context, js_api_isJustPressed, "API_isJustPressed", 1));
+    JS_SetPropertyStr(context, global_obj, "API_isJustReleased", JS_NewCFunction(context, js_api_isJustReleased, "API_isJustReleased", 1));
 
     JS_FreeValue(context, global_obj);
 	
@@ -117,7 +189,7 @@ void posiPoweroff() {
 }
 
 bool callTick() {
-    JSValue global_obj, func, result, bgColorVal;
+    JSValue global_obj, func, result;
      // Host variable to store the JS value
 
     // Get the global object
@@ -145,11 +217,7 @@ bool callTick() {
         return false;
     }
 
-    // Get the variable "API_BgColor" from the global object
-    bgColorVal = JS_GetPropertyStr(context, global_obj, "API_BgColor");
-
     // Cleanup
-    JS_FreeValue(context, bgColorVal);
     JS_FreeValue(context, result);
     JS_FreeValue(context, func);
     JS_FreeValue(context, global_obj);

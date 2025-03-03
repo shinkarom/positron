@@ -94,9 +94,9 @@ constexpr SDL_Scancode inputScancodes[numInputButtons] = {
 int main(int argc, char *argv[])
 {
 	argparse::ArgumentParser program("Positron");
-	program.add_argument("file")
-		.nargs(argparse::nargs_pattern::optional)
-		.default_value(std::string("World"));
+	program.add_argument("file");
+		//.nargs(argparse::nargs_pattern::optional)
+		//.default_value(std::string(""));
 	try {
 		program.parse_args(argc, argv);
 	  }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[])
 	SDL_BindAudioStream(audioID, stream);
 	
 	targetTime = SDL_GetTicks() + msPerTick;
-	while(!done) {			
+	while(!done) {	
 		while(SDL_PollEvent(&event)) {
 			if (event.type == SDL_EVENT_QUIT) {
 				done = true;
@@ -151,12 +151,9 @@ int main(int argc, char *argv[])
 				winRect = calcRect(texRect);
 			}
 		}
-		 
-		 for(int i = 0; i<numInputButtons; i++) {
-			 auto kbState = SDL_GetKeyboardState(nullptr);
-			for (int i = 0; i < numInputButtons; i++) {
-				posiUpdateButton(i, kbState[inputScancodes[i]]);
-			}
+		 auto kbState = SDL_GetKeyboardState(nullptr);
+		for (int i = 0; i < numInputButtons; i++) {
+			posiUpdateButton(i, kbState[inputScancodes[i]]);
 		 }
 		 
 		 if(!posiRun()) {
