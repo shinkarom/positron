@@ -163,6 +163,48 @@ static JSValue js_api_isJustReleased(JSContext *ctx, JSValueConst this_val, int 
     return JS_NewBool(ctx, result);              // Convert C bool to JS boolean and return
 }
 
+void posiAPIPutPixel(uint8_t depth, int x, int y, uint32_t color);
+
+static JSValue js_posiAPIPutPixel(JSContext *ctx, JSValueConst this_val,
+                                  int argc, JSValueConst *argv) {
+    uint8_t depth;
+    int x, y;
+    uint32_t color;
+
+    if (argc != 4) {
+        return JS_ThrowTypeError(ctx, "posiAPIPutPixel expects 4 arguments");
+    }
+
+    // 1. Get and convert 'depth' (uint8_t)
+    {
+        uint32_t depth_u32; // Use uint32_t to read from JS, then cast
+        if (JS_ToUint32(ctx, &depth_u32, argv[0])) {
+            return JS_EXCEPTION; // JS_ToUint32 handles throwing errors
+        }
+        depth = (uint8_t)(depth_u32&0xFF);
+    }
+
+    // 2. Get and convert 'x' (int)
+    if (JS_ToInt32(ctx, &x, argv[1])) {
+        return JS_EXCEPTION;
+    }
+
+    // 3. Get and convert 'y' (int)
+    if (JS_ToInt32(ctx, &y, argv[2])) {
+        return JS_EXCEPTION;
+    }
+
+    // 4. Get and convert 'color' (uint32_t)
+    if (JS_ToUint32(ctx, &color, argv[3])) {
+        return JS_EXCEPTION;
+    }
+
+    // 5. Call the original C function
+    posiAPIPutPixel(depth, x, y, color);
+	
+    return JS_UNDEFINED; // void function, so return undefined
+}
+
 void posiPoweron() {	
 	runtime = JS_NewRuntime();
 	context = JS_NewContext(runtime);
@@ -175,6 +217,8 @@ void posiPoweron() {
 	JS_SetPropertyStr(context, global_obj, "API_isPressed", JS_NewCFunction(context, js_api_isPressed, "API_isPressed", 1));
     JS_SetPropertyStr(context, global_obj, "API_isJustPressed", JS_NewCFunction(context, js_api_isJustPressed, "API_isJustPressed", 1));
     JS_SetPropertyStr(context, global_obj, "API_isJustReleased", JS_NewCFunction(context, js_api_isJustReleased, "API_isJustReleased", 1));
+	JS_SetPropertyStr(context, global_obj, "API_putPixel",
+                      JS_NewCFunction(context, js_posiAPIPutPixel, "API_putPixel", 4));
 
     JS_FreeValue(context, global_obj);
 	

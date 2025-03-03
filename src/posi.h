@@ -22,6 +22,7 @@ void posiChangeState(int newState);
 
 void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
+void posiAPIPutPixel(uint8_t depth, int x, int y, uint32_t color);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
