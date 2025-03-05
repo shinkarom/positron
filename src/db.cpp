@@ -25,7 +25,7 @@ std::vector<uint8_t> decompress(const std::vector<uint8_t>& data) {
 	return decompressedData;
 }
 
-std::optional<std::vector<uint8_t>> loadByName(std::string tableName, std::string name) {
+std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name) {
 	sqlite3_stmt* stmt;
 	std::string query = "select data, compressed from "+ tableName +" where name=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -54,7 +54,7 @@ std::optional<std::vector<uint8_t>> loadByName(std::string tableName, std::strin
 	}
 }
 
-std::optional<std::vector<uint8_t>> loadByNumber(std::string tableName, int number) {
+std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number) {
 	if(number < 0 || number > 255) {
 		return std::nullopt;
 	}
@@ -86,13 +86,13 @@ std::optional<std::vector<uint8_t>> loadByNumber(std::string tableName, int numb
 	}
 }
 
-void disconnect() {
+void dbDisconnect() {
 	sqlite3_close(db);
 }
 
-bool tryConnect(std::string fileName){
+bool dbTryConnect(std::string fileName){
 	if(db) {
-		disconnect();
+		dbDisconnect();
 	}
 
 	if (sqlite3_open(fileName.c_str(), &db) != SQLITE_OK) {

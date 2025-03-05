@@ -15,13 +15,17 @@ constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto numTilePages = 256;
 constexpr auto numTiles = tilesPerPage * numTilePages;
-
-std::optional<std::vector<uint8_t>> loadByName(std::string tableName, std::string name);
-std::optional<std::vector<uint8_t>> loadByNumber(std::string tableName, int number);
-bool tryConnect(std::string fileName);
-void disconnect();
-
 constexpr auto numInputButtons = 32;
+
+std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
+std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
+bool dbTryConnect(std::string fileName);
+void dbDisconnect();
+
+void jsInit();
+void jsDeinit();
+bool jsCallTick();
+bool jsEvalMain(std::string code);
 
 enum PosiState {POSI_STATE_GAME};
 
