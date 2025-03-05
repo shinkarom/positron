@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
 	
 	bool done = false;
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	window = SDL_CreateWindow("Positron", screenWidth*3, screenHeight*3, 
+	window = SDL_CreateWindow("Positron", maxScreenWidth*3, maxScreenHeight*3, 
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
 	SDL_SetWindowMinimumSize(window, maxScreenWidth, maxScreenHeight);

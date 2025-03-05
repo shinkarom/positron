@@ -7,8 +7,8 @@
 
 constexpr auto maxScreenWidth = 256;
 constexpr auto maxScreenHeight = 256;
-constexpr auto screenWidth = 256;
-constexpr auto screenHeight = 256;
+extern int screenWidth;
+extern int screenHeight;
 constexpr auto audioFramesPerTick = 44100 / 60;
 
 constexpr auto tileSide = 8;

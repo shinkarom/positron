@@ -9,12 +9,15 @@ std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
 
 int gameState;
 
-
+int screenWidth, screenHeight;
 
 void posiPoweron() {	
 	jsInit();
 	
 	gameState = POSI_STATE_GAME;
+	
+	screenWidth = maxScreenWidth;
+	screenHeight = maxScreenHeight;
 }
 
 void posiPoweroff() {
