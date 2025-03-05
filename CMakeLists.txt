@@ -30,6 +30,7 @@ add_executable(${PROJ_NAME}
 	src/posi.cpp
 	src/gpu.cpp
 	src/input.cpp
+	src/db.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 qjs)

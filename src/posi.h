@@ -2,12 +2,24 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
+#include <optional>
 
 constexpr auto maxScreenWidth = 256;
 constexpr auto maxScreenHeight = 256;
 constexpr auto screenWidth = 256;
 constexpr auto screenHeight = 256;
 constexpr auto audioFramesPerTick = 44100 / 60;
+
+constexpr auto tileSide = 8;
+constexpr auto tilesPerPage = 256;
+constexpr auto numTilePages = 256;
+constexpr auto numTiles = tilesPerPage * numTilePages;
+
+std::optional<std::vector<uint8_t>> loadByName(std::string tableName, std::string name);
+std::optional<std::vector<uint8_t>> loadByNumber(std::string tableName, int number);
+bool tryConnect(std::string fileName);
+void disconnect();
 
 constexpr auto numInputButtons = 32;
 
@@ -22,7 +34,7 @@ void posiChangeState(int newState);
 
 void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
-void posiAPIPutPixel(uint8_t depth, int x, int y, uint32_t color);
+void posiAPIPutPixel(int x, int y, uint32_t color);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);

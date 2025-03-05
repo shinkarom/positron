@@ -3,17 +3,12 @@
 #include <cstdint>
 #include <iostream>
 #include <cstring>
-#include <fstream>
 #include <vector>
 
-#include "thirdparty/sqlite3.h"
 #include <quickjs.h>
 #include "thirdparty/m4p.h"
-#include "thirdparty/miniz.h"
 
 std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
-
-sqlite3* db;
 
 JSRuntime* runtime;
 JSContext* context;
@@ -21,24 +16,6 @@ JSContext* context;
 std::vector<char> trackBuffer;
 
 int gameState;
-
-std::vector<uint8_t> decompress(const std::vector<uint8_t>& data) {
-
-    // Prepare a buffer for decompression (initially 1MB)
-    std::vector<uint8_t> decompressedData(1024 * 1024);  
-    mz_ulong decompressedSize = decompressedData.size();
-
-    // Decompress using miniz
-    size_t result = mz_uncompress(decompressedData.data(), &decompressedSize, data.data(), data.size());
-    
-    if (result != MZ_OK) {
-        throw std::runtime_error("Decompression failed!");
-    }
-
-    decompressedData.resize(decompressedSize);  // Resize to actual decompressed size
-	
-	return decompressedData;
-}
 
 void printJSException() {
     // Get the exception value
@@ -167,40 +144,30 @@ void posiAPIPutPixel(uint8_t depth, int x, int y, uint32_t color);
 
 static JSValue js_posiAPIPutPixel(JSContext *ctx, JSValueConst this_val,
                                   int argc, JSValueConst *argv) {
-    uint8_t depth;
     int x, y;
     uint32_t color;
 
-    if (argc != 4) {
-        return JS_ThrowTypeError(ctx, "posiAPIPutPixel expects 4 arguments");
-    }
-
-    // 1. Get and convert 'depth' (uint8_t)
-    {
-        uint32_t depth_u32; // Use uint32_t to read from JS, then cast
-        if (JS_ToUint32(ctx, &depth_u32, argv[0])) {
-            return JS_EXCEPTION; // JS_ToUint32 handles throwing errors
-        }
-        depth = (uint8_t)(depth_u32&0xFF);
+    if (argc != 3) {
+        return JS_ThrowTypeError(ctx, "posiAPIPutPixel expects 3 arguments");
     }
 
     // 2. Get and convert 'x' (int)
-    if (JS_ToInt32(ctx, &x, argv[1])) {
+    if (JS_ToInt32(ctx, &x, argv[0])) {
         return JS_EXCEPTION;
     }
 
     // 3. Get and convert 'y' (int)
-    if (JS_ToInt32(ctx, &y, argv[2])) {
+    if (JS_ToInt32(ctx, &y, argv[1])) {
         return JS_EXCEPTION;
     }
 
     // 4. Get and convert 'color' (uint32_t)
-    if (JS_ToUint32(ctx, &color, argv[3])) {
+    if (JS_ToUint32(ctx, &color, argv[2])) {
         return JS_EXCEPTION;
     }
 
     // 5. Call the original C function
-    posiAPIPutPixel(depth, x, y, color);
+    posiAPIPutPixel(x, y, color);
 	
     return JS_UNDEFINED; // void function, so return undefined
 }
@@ -218,7 +185,7 @@ void posiPoweron() {
     JS_SetPropertyStr(context, global_obj, "API_isJustPressed", JS_NewCFunction(context, js_api_isJustPressed, "API_isJustPressed", 1));
     JS_SetPropertyStr(context, global_obj, "API_isJustReleased", JS_NewCFunction(context, js_api_isJustReleased, "API_isJustReleased", 1));
 	JS_SetPropertyStr(context, global_obj, "API_putPixel",
-                      JS_NewCFunction(context, js_posiAPIPutPixel, "API_putPixel", 4));
+                      JS_NewCFunction(context, js_posiAPIPutPixel, "API_putPixel", 3));
 
     JS_FreeValue(context, global_obj);
 	
@@ -229,7 +196,7 @@ void posiPoweroff() {
 	JS_FreeContext(context);
 	JS_FreeRuntime(runtime);
 	
-	sqlite3_close(db);
+	disconnect();
 }
 
 bool callTick() {
@@ -276,45 +243,19 @@ bool posiRun() {
 		default:
 			return false;
 	}
-}
+}\
 
 bool posiLoad(std::string fileName) {
-	if(db) {
-		sqlite3_close(db);
-	}
-
-	if (sqlite3_open(fileName.c_str(), &db) != SQLITE_OK) {
-        std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
-        return false;
-    }
-	
-	std::string retrieved_code;
-	sqlite3_stmt* stmt2;
-	if(sqlite3_prepare_v2(db, "select data, compressed from code where name='MAIN'", -1, &stmt2, nullptr) != SQLITE_OK) {
-		std::cout<<"error "<<sqlite3_errmsg(db)<<std::endl;
+	if(!tryConnect(fileName)) {
 		return false;
-	} 
-
-	if(sqlite3_step(stmt2) != SQLITE_ROW) {
-		std::cout<<"error "<<sqlite3_errmsg(db)<<std::endl;
 	}
 	
-	const void* blobData = sqlite3_column_blob(stmt2, 0);
-    int blobSize = sqlite3_column_bytes(stmt2, 0);
-    bool isCompressed = sqlite3_column_int(stmt2, 1);
-	
-	std::vector<uint8_t> storedData(static_cast<const uint8_t*>(blobData), 
-                                        static_cast<const uint8_t*>(blobData) + blobSize);
-
-	if(isCompressed) {
-		auto result = decompress(storedData);  // true = return as string
-		retrieved_code = std::string(result.begin(), result.end());
-	} else {
-		retrieved_code = std::string(storedData.begin(), storedData.end());
+	auto retrieved_data = loadByName("code", "MAIN");
+	if(!retrieved_data) {
+		std::cout<<"Error: Could not load MAIN script."<<std::endl;
+		return false;
 	}
-	
-	
-	sqlite3_finalize(stmt2);
+	auto retrieved_code = std::string((*retrieved_data).begin(), (*retrieved_data).end());
 
     // Evaluate the JavaScript code
     auto r = JS_Eval(context, retrieved_code.c_str(), strlen(retrieved_code.c_str()), "<main>", JS_EVAL_TYPE_GLOBAL);
