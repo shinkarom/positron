@@ -40,6 +40,7 @@ void gpuLoad();
 void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
 void posiAPIPutPixel(int x, int y, uint32_t color);
+void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);

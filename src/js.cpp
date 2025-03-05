@@ -162,6 +162,30 @@ static JSValue js_posiAPIPutPixel(JSContext *ctx, JSValueConst this_val,
     return JS_UNDEFINED; // void function, so return undefined
 }
 
+static JSValue js_posiAPIDrawSprite(JSContext *ctx, JSValueConst this_val,
+                                      int argc, JSValueConst *argv) {
+    int id, w, h, x, y;
+    bool flipHorz, flipVert;
+    int arg_idx = 0;
+
+    if (argc != 7) {
+        return JS_ThrowTypeError(ctx, "posiAPIDrawSprite expects 7 arguments, but got %d", argc);
+    }
+
+    if (JS_ToInt32(ctx, &id, argv[arg_idx++])) return JS_EXCEPTION;
+    if (JS_ToInt32(ctx, &w, argv[arg_idx++])) return JS_EXCEPTION;
+    if (JS_ToInt32(ctx, &h, argv[arg_idx++])) return JS_EXCEPTION;
+    if (JS_ToInt32(ctx, &x, argv[arg_idx++])) return JS_EXCEPTION;
+    if (JS_ToInt32(ctx, &y, argv[arg_idx++])) return JS_EXCEPTION;
+
+    flipHorz = JS_ToBool(ctx, argv[arg_idx++]);
+    flipVert = JS_ToBool(ctx, argv[arg_idx++]);
+
+    posiAPIDrawSprite(id, w, h, x, y, flipHorz, flipVert);
+
+    return JS_UNDEFINED;
+}
+
 void jsInit() {
 	runtime = JS_NewRuntime();
 	context = JS_NewContext(runtime);
@@ -176,6 +200,7 @@ void jsInit() {
     JS_SetPropertyStr(context, global_obj, "API_isJustReleased", JS_NewCFunction(context, js_api_isJustReleased, "API_isJustReleased", 1));
 	JS_SetPropertyStr(context, global_obj, "API_putPixel",
                       JS_NewCFunction(context, js_posiAPIPutPixel, "API_putPixel", 3));
+	JS_SetPropertyStr(context, global_obj, "API_drawSprite", JS_NewCFunction(context, js_posiAPIDrawSprite, "API_drawSprite", 7));
 
     JS_FreeValue(context, global_obj);
 }

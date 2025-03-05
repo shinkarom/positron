@@ -34,3 +34,29 @@ void gpuLoad() {
 		memcpy(outputStart, (*x).data(), tilesPerPage * tileSide* tileSide*4);
 	}
 }
+
+void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert) {
+	if(id < 0 || id > numTiles || w < 1 || h < 1 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
+		return;
+	}
+	auto pageNum = id / tilesPerPage;
+	auto idRemainder = id % tilesPerPage;
+	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
+	auto tileRow = idRemainder / 16;
+	auto tileColumn = idRemainder % 16;
+	if(tileRow + w > 16 || tileColumn + h > 16){
+		return;
+	}
+	constexpr auto pixelRowSize = 16 * tileSide;
+	constexpr auto tileRowSize = pixelRowSize * tileSide;
+	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
+	for(auto yy = 0; yy < h*tileSide; yy++) {
+		for(auto xx = 0; xx < w*tileSide; xx++){
+			auto colorPos = tileStart + yy*pixelRowSize + xx;
+			auto pixelColor = tiles[colorPos];
+			auto posX = flipHorz ? x + w * tileSide - xx : x+xx;
+			auto posY = flipVert ? y + h * tileSide - yy : y+yy;
+			posiAPIPutPixel(posX,posY, pixelColor);
+		}
+	}
+}
