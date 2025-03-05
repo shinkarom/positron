@@ -1,6 +1,8 @@
 #include "posi.h"
 
 #include <vector>
+#include <iostream>
+#include <cstring>
 
 std::vector<uint32_t> frameBuffer(maxScreenWidth * maxScreenHeight);
 std::vector<uint32_t> tiles(numTiles * tileSide * tileSide);
@@ -20,6 +22,15 @@ void posiAPIPutPixel(int x, int y, uint32_t color) {
 	frameBuffer[y * screenWidth + x] = newColor;
 }
 
-void posiRedraw(uint32_t* buffer) {
+void posiRedraw(uint32_t* buffer) {	
 	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
+}
+
+void gpuLoad() {
+	for(auto i = 0; i< 256; i++) {
+		auto x = dbLoadByNumber("tiles", i);
+		if(!x || (*x).size() != tilesPerPage * tileSide*tileSide*4) continue;
+		auto outputStart = tiles.data() + i * (tilesPerPage * tileSide* tileSide);
+		memcpy(outputStart, (*x).data(), tilesPerPage * tileSide* tileSide*4);
+	}
 }

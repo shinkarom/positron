@@ -50,6 +50,8 @@ bool posiLoad(std::string fileName) {
 		return false;
 	}
 	
+	gpuLoad();
+	
 	return true;
 }
 

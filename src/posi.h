@@ -36,6 +36,7 @@ bool posiLoad(std::string fileName);
 int16_t* posiAudiofeed();
 void posiChangeState(int newState);
 
+void gpuLoad();
 void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
 void posiAPIPutPixel(int x, int y, uint32_t color);
