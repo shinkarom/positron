@@ -13,7 +13,7 @@ constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto numTilePages = 256;
 constexpr auto numTiles = tilesPerPage * numTilePages;
-constexpr auto numInputButtons = 32;
+constexpr auto numInputButtons = 12;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
