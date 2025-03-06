@@ -10,14 +10,14 @@ std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
 int gameState;
 
 void posiPoweron() {	
-	jsInit();
+	luaInit();
 	
 	gameState = POSI_STATE_GAME;
 	
 }
 
 void posiPoweroff() {
-	jsDeinit();
+	luaDeinit();
 	
 	dbDisconnect();
 }
@@ -38,14 +38,14 @@ bool posiLoad(std::string fileName) {
 		return false;
 	}
 	
-	auto retrieved_data = dbLoadByName("code", "MAIN");
+	auto retrieved_data = dbLoadByName("code", "main");
 	if(!retrieved_data) {
-		std::cout<<"Error: Could not load MAIN script."<<std::endl;
+		std::cout<<"Error: Could not load main script."<<std::endl;
 		return false;
 	}
 	auto retrieved_code = std::string((*retrieved_data).begin(), (*retrieved_data).end());
 
-	if(!jsEvalMain(retrieved_code)){
+	if(!luaEvalMain(retrieved_code)){
 		return false;
 	}
 	
@@ -77,5 +77,5 @@ bool posiStateGameRun() {
 	for(int i = 0; i < audioFramesPerTick*2; i++) {
 		soundBuffer[i] = 0;
 	}
-	return jsCallTick();
+	return luaCallTick();
 }

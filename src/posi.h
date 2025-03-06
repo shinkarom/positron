@@ -20,10 +20,10 @@ std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int nu
 bool dbTryConnect(std::string fileName);
 void dbDisconnect();
 
-void jsInit();
-void jsDeinit();
-bool jsCallTick();
-bool jsEvalMain(std::string code);
+void luaInit();
+void luaDeinit();
+bool luaCallTick();
+bool luaEvalMain(std::string code);
 
 enum PosiState {POSI_STATE_GAME};
 
