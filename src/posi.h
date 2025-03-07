@@ -6,7 +6,7 @@
 #include <optional>
 
 constexpr auto screenWidth = 256;
-constexpr auto screenHeight = 256;
+constexpr auto screenHeight = 192;
 constexpr auto audioFramesPerTick = 44100 / 60;
 
 constexpr auto tileSide = 8;

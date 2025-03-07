@@ -6,8 +6,75 @@ extern "C" {
 #include <lauxlib.h>
 #include <lualib.h>
 }
+#include <unordered_map>
+#include <unordered_set>
 
 lua_State* L;
+
+// Module cache
+std::unordered_map<std::string, int> module_cache;
+
+// Set to track modules currently being loaded
+std::unordered_set<std::string> loading_modules;
+
+int my_require_cpp(lua_State* L) {
+    const char* module_name_cstr = luaL_checkstring(L, 1);
+    std::string module_name = module_name_cstr;
+
+    // 1. Check Module Cache (in Lua table _MODULE_CACHE)
+    lua_getglobal(L, "_MODULE_CACHE"); // Push _MODULE_CACHE table onto stack
+    lua_getfield(L, -1, module_name.c_str()); // Push _MODULE_CACHE[module_name] onto stack (table is at -2, result at -1)
+    if (!lua_isnil(L, -1)) { // Check if _MODULE_CACHE[module_name] is not nil (i.e., module is cached)
+        lua_remove(L, -2); // Remove _MODULE_CACHE table, keep only the cached module value
+        return 1; // Return 1 value (the cached module from Lua cache)
+    }
+    lua_pop(L, 2); // Pop both the result (nil) and the _MODULE_CACHE table from stack - not found in cache
+
+    // 2. Check for Recursive Inclusion
+    if (loading_modules.count(module_name)) {
+        return luaL_error(L, "recursive module inclusion detected for module '%s'", module_name.c_str());
+    }
+
+    // 3. Mark Module as Loading
+    loading_modules.insert(module_name);
+
+    // 4. Module Retrieval
+    std::optional<std::vector<uint8_t>> module_bytes_opt = dbLoadByName("code", module_name);
+
+    if (!module_bytes_opt.has_value()) {
+        loading_modules.erase(module_name);
+        return luaL_error(L, "module '%s' not found", module_name.c_str());
+    }
+
+    std::vector<uint8_t> module_bytes = module_bytes_opt.value();
+
+    // 5. Module Loading and Execution
+    if (luaL_loadbuffer(L, (const char*)module_bytes.data(), module_bytes.size(), module_name.c_str()) != LUA_OK) {
+        loading_modules.erase(module_name);
+        return luaL_error(L, "%s", lua_tostring(L, -1));
+    }
+
+    if (lua_pcall(L, 0, LUA_MULTRET, 0) != LUA_OK) {
+        loading_modules.erase(module_name);
+        return luaL_error(L, "%s", lua_tostring(L, -1));
+    }
+
+    // 6. Module Caching (in Lua table _MODULE_CACHE)
+    if (lua_gettop(L) > 0) {
+        lua_getglobal(L, "_MODULE_CACHE"); // Push _MODULE_CACHE table
+        lua_pushstring(L, module_name.c_str()); // Push module name as key
+        lua_pushvalue(L, -3); // Push the module's return value (which is currently below _MODULE_CACHE and module name on stack)
+        lua_settable(L, -3); // _MODULE_CACHE[module_name] = module's return value. Table is at -3, key at -2, value at -1.
+        lua_pop(L, 1); // Pop _MODULE_CACHE table (we are done with it for now)
+        // Module value (result of lua_pcall) is already on stack, ready to be returned.
+        loading_modules.erase(module_name); // Remove after successful load
+        return 1;
+    } else {
+        lua_pushnil(L); // If module returned nothing, push nil (optional behavior)
+        loading_modules.erase(module_name); // Remove after successful (but value-less) load
+        return 1;
+    }
+}
 
 void printLuaError(lua_State *L) {
     // Get the error message from the top of the stack
@@ -173,6 +240,10 @@ void luaInit() {
     L = luaL_newstate();   // Create a new Lua state
     luaL_openlibs(L);       // Open standard Lua libraries (optional, but often useful)
 
+	// Create the _MODULE_CACHE table in Lua (global table)
+    lua_newtable(L);
+    lua_setglobal(L, "_MODULE_CACHE");
+
     // Register your C API functions with Lua's global environment
     lua_register(L, "API_cls", lua_api_cls);
     lua_register(L, "API_isPressed", lua_api_isPressed);
@@ -180,6 +251,7 @@ void luaInit() {
     lua_register(L, "API_isJustReleased", lua_api_isJustReleased);
     lua_register(L, "API_putPixel", lua_api_putPixel);
     lua_register(L, "API_drawSprite", lua_api_drawSprite);
+	lua_register(L, "require", my_require_cpp);
 
     // No need to explicitly get and free a global object in Lua like in QuickJS C API
     // because lua_register directly works with the global environment.
@@ -219,7 +291,7 @@ bool luaCallTick() {
 }
 
 bool luaEvalMain(std::string code) {
-    int status = luaL_loadstring(L, code.c_str()); // Load the Lua code string
+    int status = luaL_loadbuffer(L, code.c_str(), code.size(), "main"); // Load the Lua code string
 
     if (status == LUA_OK) {
         // Code loaded successfully, now execute it in protected mode
