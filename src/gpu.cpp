@@ -29,35 +29,9 @@ void posiRedraw(uint32_t* buffer) {
 void gpuLoad() {
 	for(auto i = 0; i< 256; i++) {
 		auto x = dbLoadByNumber("tiles", i);
-		if(!x || x->size() != tilesPerPage * tileSide*tileSide*2) continue;
+		if(!x || x->size() != tilesPerPage * tileSide*tileSide*4) continue;
 		auto outputStart = tiles.data() + i * (tilesPerPage * tileSide* tileSide);
-		uint8_t* dest = (uint8_t*)outputStart;
-		const uint16_t* src = reinterpret_cast<const uint16_t*>((*x).data());
-
-		for (size_t i = 0; i < tilesPerPage * tileSide * tileSide; i++) {
-			uint16_t pixel = src[i];  // Read 16-bit ARGB1555 pixel
-
-			// Extract alpha bit (1 if opaque, 0 if fully transparent)
-			uint8_t a = (pixel & 0x8000) ? 0xFF : 0x00;
-
-			// Extract and convert 5-bit RGB to 8-bit
-			uint8_t r = ((pixel >> 10) & 0x1F) * 255 / 31;
-			uint8_t g = ((pixel >> 5) & 0x1F) * 255 / 31;
-			uint8_t b = (pixel & 0x1F) * 255 / 31;
-
-			// If alpha is 0, force RGB to 0 as well
-			if (a == 0) {
-				r = 0;
-				g = 0;
-				b = 0;
-			}
-
-			// Store as ARGB8888
-			*dest++ = b;  // Blue
-			*dest++ = g;  // Green
-			*dest++ = r;  // Red
-			*dest++ = a;  // Alpha
-		}
+		memcpy(outputStart, x->data(), tilesPerPage * tileSide*tileSide*4);
 	}
 }
 
