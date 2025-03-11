@@ -13,6 +13,16 @@ constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto numTilePages = 256;
 constexpr auto numTiles = tilesPerPage * numTilePages;
+
+constexpr auto numTilemaps = 64;
+constexpr auto tilemapWidthScreens = 8;
+constexpr auto tilemapHeightScreens = 8;
+constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
+constexpr auto tilemapScreenHeightTiles = screenHeight / tileSide;
+constexpr auto tilemapScreenTotalTiles = tilemapScreenWidthTiles * tilemapScreenHeightTiles;
+constexpr auto tilemapTotalTiles = tilemapScreenTotalTiles * tilemapWidthScreens * tilemapHeightScreens;
+constexpr auto tilemapTotalBytes = tilemapTotalTiles * 2;
+
 constexpr auto numInputButtons = 12;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
