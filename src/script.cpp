@@ -95,60 +95,9 @@ void printLuaError(lua_State *L) {
         fprintf(stderr, "Lua Error occurred, but could not retrieve message.\n");
     }  
 	
-/*
-    // Get and print the stack trace (using debug library)
-    luaL_traceback(L, L, error_message, 0); // 1 means get traceback from current call stack
-    const char *stack_trace = lua_tostring(L, -1);
-    if (stack_trace) {
-        fprintf(stderr, "Lua Error:\n%s\n", stack_trace);
-        lua_pop(L, 1); // Pop the stack trace string
-    } else {
-        fprintf(stderr, "Stack trace exists, but couldn't retrieve its string.\n");
-    }
-	*/
     lua_pop(L, 1); // Pop the error message from the stack - crucial to clean up the stack
 }
-/*
-void printLuaError(lua_State *L) {
-    const char *error_message = lua_tostring(L, -1);
-    fprintf(stderr, "Lua Error: %s\n", error_message);
 
-    // **--- Debug: Print Stack Contents BEFORE traceback ---**
-    int stackTop = lua_gettop(L);
-    fprintf(stderr, "** Stack Contents BEFORE luaL_traceback (Top to Bottom): **\n");
-    if (stackTop == 0) {
-        fprintf(stderr, "   Stack is EMPTY\n");
-    } else {
-        for (int i = stackTop; i >= 1; --i) {
-            int type = lua_type(L, i);
-            fprintf(stderr, "   Level %d: Type: %s", i, lua_typename(L, type));
-            if (type == LUA_TSTRING) {
-                fprintf(stderr, ", Value: '%s'", lua_tostring(L, i));
-            } else if (type == LUA_TNUMBER) {
-                fprintf(stderr, ", Value: %f", lua_tonumber(L, i));
-            } else if (type == LUA_TBOOLEAN) {
-                fprintf(stderr, ", Value: %s", lua_toboolean(L, i) ? "true" : "false");
-            } else if (type == LUA_TNIL) {
-                fprintf(stderr, ", Value: nil");
-            }
-            fprintf(stderr, "\n");
-        }
-    }
-    fprintf(stderr, "** --- End Stack Contents --- **\n");
-
-    luaL_traceback(L, L, error_message, 0);
-    const char *stack_trace = lua_tostring(L, -1);
-
-    fprintf(stderr, "Stack Traceback:\n");
-    if (stack_trace) {
-        fprintf(stderr, "%s\n", stack_trace);
-        lua_pop(L, 1); // Pop the stack trace string
-    } else {
-        fprintf(stderr, "Stack trace IS NULL after luaL_traceback.\n");
-    }
-    lua_pop(L, 1); // Pop the original error message
-}
-*/
 static int lua_api_cls(lua_State *L) {
     lua_Integer color; // Lua integer type (can hold 32-bit integers)
 
@@ -288,6 +237,52 @@ static int lua_api_drawSprite(lua_State *L) {
     return 0; // No return value to Lua
 }
 
+static int l_posiAPIDrawTilemap(lua_State *L) {
+    // 1. Get arguments from Lua stack and check their types.
+    int tilemapNum = luaL_checkinteger(L, 1); // Get the 1st argument, ensure it's an integer
+    int tmx = luaL_checkinteger(L, 2);        // Get the 2nd argument, ensure it's an integer
+    int tmy = luaL_checkinteger(L, 3);        // Get the 3rd argument, ensure it's an integer
+    int tmw = luaL_checkinteger(L, 4);        // Get the 4th argument, ensure it's an integer
+    int tmh = luaL_checkinteger(L, 5);        // Get the 5th argument, ensure it's an integer
+    int x = luaL_checkinteger(L, 6);          // Get the 6th argument, ensure it's an integer
+    int y = luaL_checkinteger(L, 7);          // Get the 7th argument, ensure it's an integer
+
+    // 2. Call the original C function posiAPIDrawTilemap.
+    posiAPIDrawTilemap(tilemapNum, tmx, tmy, tmw, tmh, x, y);
+
+    // 3. Return values to Lua (if any). In this case, posiAPIDrawTilemap is void, so we return nothing.
+    return 0; // Indicate no return values to Lua.
+}
+
+static int l_posiAPITilemapEntry(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 3) {
+    // Assume it's a call to posiAPIGetTilemapEntry (3 arguments: tilemapNum, tmx, tmy)
+    int tilemapNum = luaL_checkinteger(L, 1);
+    int tmx = luaL_checkinteger(L, 2);
+    int tmy = luaL_checkinteger(L, 3);
+
+    uint16_t result = posiAPIGetTilemapEntry(tilemapNum, tmx, tmy);
+    lua_pushinteger(L, (lua_Integer)result);
+    return 1; // Return 1 value (the tilemap entry)
+
+  } else if (num_args == 4) {
+    // Assume it's a call to posiAPISetTilemapEntry (4 arguments: tilemapNum, tmx, tmy, entry)
+    int tilemapNum = luaL_checkinteger(L, 1);
+    int tmx = luaL_checkinteger(L, 2);
+    int tmy = luaL_checkinteger(L, 3);
+    uint16_t entry = (uint16_t)luaL_checkinteger(L, 4);
+
+    posiAPISetTilemapEntry(tilemapNum, tmx, tmy, entry);
+    return 0; // Return no value (void function)
+
+  } else {
+    // Incorrect number of arguments
+    return luaL_error(L, "API_tilemapEntry: Incorrect number of arguments. Expected 3 (get) or 4 (set).");
+  }
+}
+
 static int l_cppPrint(lua_State *L) {
     int nargs = lua_gettop(L); // Number of arguments passed from Lua
     std::string output = "";
@@ -358,6 +353,8 @@ void luaInit() {
     lua_register(L, "API_isJustReleased", lua_api_isJustReleased);
     lua_register(L, "API_putPixel", lua_api_putPixel);
     lua_register(L, "API_drawSprite", lua_api_drawSprite);
+	lua_register(L, "API_drawTilemap", l_posiAPIDrawTilemap);
+	lua_register(L, "API_tilemapEntry", l_posiAPITilemapEntry);
 	lua_register(L, "require", my_require_cpp);
 	lua_register(L, "print", l_cppPrint);
 

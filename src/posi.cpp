@@ -11,7 +11,7 @@ int gameState;
 
 void posiPoweron() {	
 	luaInit();
-	
+	gpuInit();
 	gameState = POSI_STATE_GAME;
 	
 }

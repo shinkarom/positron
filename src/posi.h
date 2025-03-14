@@ -11,16 +11,23 @@ constexpr auto audioFramesPerTick = 44100 / 60;
 
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
-constexpr auto numTilePages = 256;
+constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
+constexpr auto numTilePages = 64;
 constexpr auto numTiles = tilesPerPage * numTilePages;
+constexpr auto numTilesPixels = pixelsPerPage * numTilePages;
 
-constexpr auto numTilemaps = 64;
+constexpr auto pixelRowSize = 16 * tileSide;
+constexpr auto tileRowSize = pixelRowSize * tileSide;
+
+constexpr auto numTilemaps = 16;
 constexpr auto tilemapWidthScreens = 8;
 constexpr auto tilemapHeightScreens = 8;
 constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
 constexpr auto tilemapScreenHeightTiles = screenHeight / tileSide;
 constexpr auto tilemapScreenTotalTiles = tilemapScreenWidthTiles * tilemapScreenHeightTiles;
-constexpr auto tilemapTotalTiles = tilemapScreenTotalTiles * tilemapWidthScreens * tilemapHeightScreens;
+constexpr auto tilemapTotalWidthTiles = tilemapScreenWidthTiles * tilemapWidthScreens;
+constexpr auto tilemapTotalHeightTiles = tilemapScreenHeightTiles * tilemapHeightScreens;
+constexpr auto tilemapTotalTiles = tilemapTotalWidthTiles * tilemapTotalHeightTiles;
 constexpr auto tilemapTotalBytes = tilemapTotalTiles * 2;
 
 constexpr auto numInputButtons = 12;
@@ -44,11 +51,15 @@ bool posiLoad(std::string fileName);
 int16_t* posiAudiofeed();
 void posiChangeState(int newState);
 
+void gpuInit();
 void gpuLoad();
 void posiRedraw(uint32_t* buffer);
 void posiAPICls(uint32_t color);
 void posiAPIPutPixel(int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
+void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
+uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
+void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
