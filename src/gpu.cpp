@@ -34,11 +34,16 @@ void gpuInit() {
 }
 
 void gpuLoad() {
-	for(auto i = 0; i< 256; i++) {
+	for(auto i = 0; i< numTilePages; i++) {
 		auto x = dbLoadByNumber("tiles", i);
 		if(!x || x->size() != pixelsPerPage*4) continue;
 		auto outputStart = tiles.data() + i * (pixelsPerPage);
 		memcpy(outputStart, x->data(), pixelsPerPage*4);
+	}
+	for(auto i = 0; i<numTilemaps; i++) {
+		auto x = dbLoadByNumber("tilemaps", i);
+		if(!x || x->size() != tilemapTotalBytes) continue;
+		memcpy(tilemaps[i].data(), x->data(), tilemapTotalBytes);
 	}
 }
 
@@ -92,9 +97,6 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 	auto maxY = y+tmh>=screenHeight?screenHeight-1:y+tmh;
 	for(auto yy = y;yy<=maxY; yy++) {
 		for(auto xx = x;xx<=maxX;xx++){
-			/*
-			add horizontal and vertical flipping
-			*/
 			auto tmxx = (tmx+(xx-x))%(tilemapTotalWidthTiles*tileSide);
 			auto tmyy = (tmy+(yy-y))%(tilemapTotalHeightTiles*tileSide);
 			auto tmTileX = tmxx / tileSide;
@@ -103,6 +105,10 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tmPixelY = tmyy % tileSide;
 			auto tileNum = tilemaps[tilemapNum][tmTileY*tilemapTotalWidthTiles+tmTileX];
 			auto realTileNum = tileNum & 0x3FFF;
+			//if(tileNum != 0) {
+			//	std::cout<<tmTileX<<" "<<tmTileY<<" "<<tileNum<<" "<<realTileNum<<std::endl;
+			//}
+			
 			if(tileNum & 0x8000) {
 				tmPixelX = tileSide - 1 - tmPixelX;
 			}
