@@ -89,7 +89,7 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 		return;
 	if(tmx<0||tmx>=tilemapTotalWidthTiles||tmy<0||tmy>=tilemapTotalHeightTiles)
 		return;
-	if(tmw<0||tmw>screenWidth||tmh<0||tmh>screenHeight)
+	if(tmw<0||tmh<0)
 		return;
 	if(x<0||x>=screenWidth||y<0||y>=screenHeight)
 		return;

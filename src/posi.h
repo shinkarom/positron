@@ -6,7 +6,7 @@
 #include <optional>
 
 constexpr auto screenWidth = 256;
-constexpr auto screenHeight = 256;
+constexpr auto screenHeight = 224;
 constexpr auto audioFramesPerTick = 44100 / 60;
 
 constexpr auto tileSide = 8;
@@ -20,8 +20,8 @@ constexpr auto pixelRowSize = 16 * tileSide;
 constexpr auto tileRowSize = pixelRowSize * tileSide;
 
 constexpr auto numTilemaps = 16;
-constexpr auto tilemapWidthScreens = 8;
-constexpr auto tilemapHeightScreens = 8;
+constexpr auto tilemapWidthScreens = tileSide;
+constexpr auto tilemapHeightScreens = tileSide;
 constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
 constexpr auto tilemapScreenHeightTiles = screenHeight / tileSide;
 constexpr auto tilemapScreenTotalTiles = tilemapScreenWidthTiles * tilemapScreenHeightTiles;
