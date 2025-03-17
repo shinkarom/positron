@@ -1,12 +1,13 @@
 #include "posi.h"
 
-#include <vector>
 #include <iostream>
 #include <cstring>
+#include <array>
 
-std::vector<uint32_t> frameBuffer(screenWidth * screenHeight);
-std::vector<uint32_t> tiles(numTilesPixels);
-std::vector<uint16_t> tilemaps[numTilemaps];
+std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
+std::array<uint32_t, numTilesPixels> tiles;
+std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
+std::array<uint32_t, 1<<16> palette;
 
 void posiAPICls(uint32_t color) {
 	color = 0xFF000000 | (color & 0x00FFFFFF);
@@ -28,8 +29,21 @@ void posiRedraw(uint32_t* buffer) {
 }
 
 void gpuInit() {
-	for(auto i = 0; i<numTilemaps; i++) {
-		tilemaps[i].resize(tilemapTotalTiles);
+	for(uint64_t i = 0; i<palette.size(); i++) {
+		auto a1 = i&0x8000;
+		auto r5 = (i&0x7C00)>>10;
+		auto g5 = (i&0x03E0)>>5;
+		auto b5 = i&0x001F;
+		if(!a1) {
+			palette[i] = 0x00000000;
+			continue;
+		} else {
+			auto n = 0xFF000000;
+			n |= r5 << 19;
+			n |= g5 << 11;
+			n |= b5 << 3 ;
+			palette[i] = n;
+		}
 	}
 }
 
@@ -38,28 +52,13 @@ void loadTilePages() {
 		auto x = dbLoadByNumber("tiles", i);
 		if(!x || x->size() != pixelsPerPage*2) continue;
 		auto outputStart = tiles.data() + i * (pixelsPerPage);
-		uint8_t* dest = (uint8_t*)outputStart;
+		uint32_t* dest = (uint32_t*)outputStart;
 		const uint16_t* src = reinterpret_cast<const uint16_t*>((*x).data());
 		for (size_t i = 0; i < tilesPerPage * tileSide * tileSide; i++) {
 			uint16_t pixel = src[i];  // Read 16-bit ARGB1555 pixel
-			// Extract alpha bit (1 if opaque, 0 if fully transparent)
-			uint8_t a = (pixel & 0x8000) ? 0xFF : 0x00;
-			// Extract and convert 5-bit RGB to 8-bit
-			uint8_t r = ((pixel >> 10) & 0x1F) * 255 / 31;
-			uint8_t g = ((pixel >> 5) & 0x1F) * 255 / 31;
-			uint8_t b = (pixel & 0x1F) * 255 / 31;
-			// If alpha is 0, force RGB to 0 as well
-			if (a == 0) {
-				r = 0;
-				g = 0;
-				b = 0;
-			}
-			// Store as ARGB8888
-			*dest++ = b;  // Blue
-			*dest++ = g;  // Green
-			*dest++ = r;  // Red
-			*dest++ = a;  // Alpha
-		}	}
+			*dest++ = palette[pixel];
+		}	
+	}	
 }
 
 void loadTilemaps() {
