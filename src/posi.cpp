@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <iostream>
 #include <cstring>
-#include <vector>
+#include <array>
 
-std::vector<int16_t> soundBuffer(audioFramesPerTick*2);
+std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 
 int gameState;
 
@@ -13,7 +13,6 @@ void posiPoweron() {
 	luaInit();
 	gpuInit();
 	gameState = POSI_STATE_GAME;
-	
 }
 
 void posiPoweroff() {

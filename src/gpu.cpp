@@ -5,9 +5,9 @@
 #include <array>
 
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
-std::array<uint32_t, numTilesPixels> tiles;
+std::array<uint16_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
-std::array<uint32_t, 1<<16> palette;
+std::array<uint32_t, (1<<16)> palette;
 
 void posiAPICls(uint32_t color) {
 	color = 0xFF000000 | (color & 0x00FFFFFF);
@@ -29,22 +29,33 @@ void posiRedraw(uint32_t* buffer) {
 }
 
 void gpuInit() {
-	for(uint64_t i = 0; i<palette.size(); i++) {
-		auto a1 = i&0x8000;
-		auto r5 = (i&0x7C00)>>10;
-		auto g5 = (i&0x03E0)>>5;
-		auto b5 = i&0x001F;
-		if(!a1) {
-			palette[i] = 0x00000000;
-			continue;
-		} else {
-			auto n = 0xFF000000;
-			n |= r5 << 19;
-			n |= g5 << 11;
-			n |= b5 << 3 ;
-			palette[i] = n;
-		}
-	}
+    for (uint32_t i = 0; i < (1 << 16); ++i) {
+        if (i == 0) {
+            // Color 0 is transparent (RGBA: 0x00000000)
+            palette[0] = 0x00000000;
+        } else {
+            // Extract the bit fields from the 16-bit color
+            uint16_t color16 = static_cast<uint16_t>(i);
+            uint8_t a = (color16 >> 15) & 0x01;
+            uint8_t r = (color16 >> 10) & 0x1F;
+            uint8_t g = (color16 >> 5) & 0x1F;
+            uint8_t b = color16 & 0x1F;
+
+            // Construct the 8-bit Red, Green, and Blue components
+            uint8_t red = (r << 3) | (a << 2);
+            uint8_t green = (g << 3) | (a << 2);
+            uint8_t blue = (b << 3) | (a << 2);
+
+            // The alpha channel for non-transparent colors is 0xFF
+            uint32_t alpha = 0xFF << 24;
+            uint32_t red32 = red << 16;
+            uint32_t green32 = green << 8;
+            uint32_t blue32 = blue;
+
+            // Combine the RGBA components into a 32-bit value
+            palette[i] = alpha | red32 | green32 | blue32;
+        }
+    }
 }
 
 void loadTilePages() {
@@ -52,11 +63,11 @@ void loadTilePages() {
 		auto x = dbLoadByNumber("tiles", i);
 		if(!x || x->size() != pixelsPerPage*2) continue;
 		auto outputStart = tiles.data() + i * (pixelsPerPage);
-		uint32_t* dest = (uint32_t*)outputStart;
+		uint16_t* dest = (uint16_t*)outputStart;
 		const uint16_t* src = reinterpret_cast<const uint16_t*>((*x).data());
-		for (size_t i = 0; i < tilesPerPage * tileSide * tileSide; i++) {
+		for (size_t i = 0; i < pixelsPerPage; i++) {
 			uint16_t pixel = src[i];  // Read 16-bit ARGB1555 pixel
-			*dest++ = palette[pixel];
+			*dest++ = pixel;
 		}	
 	}	
 }
@@ -90,7 +101,7 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	for(auto yy = 0; yy < h*tileSide; yy++) {
 		for(auto xx = 0; xx < w*tileSide; xx++){
 			auto colorPos = tileStart + yy*pixelRowSize + xx;
-			auto pixelColor = tiles[colorPos];
+			auto pixelColor = palette[tiles[colorPos]];
 			auto posX = flipHorz ? x + w * tileSide - xx : x+xx;
 			auto posY = flipVert ? y + h * tileSide - yy : y+yy;
 			posiAPIPutPixel(posX,posY, pixelColor);
@@ -149,7 +160,7 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tileColumn = idRemainder % 16;
 			auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
 			auto pixelPos = tileStart + tmPixelY*pixelRowSize+tmPixelX;
-			auto color = tiles[pixelPos];
+			auto color = palette[tiles[pixelPos]];
 			posiAPIPutPixel(xx, yy,color);
 		}
 	}
