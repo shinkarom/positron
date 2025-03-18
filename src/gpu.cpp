@@ -136,8 +136,8 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 		return;
 	if(x<0||x>=screenWidth||y<0||y>=screenHeight)
 		return;
-	auto maxX = x+tmw>=screenWidth?screenWidth-1:x+tmw;
-	auto maxY = y+tmh>=screenHeight?screenHeight-1:y+tmh;
+	auto maxX = x+tmw>=screenWidth?screenWidth-1:x+tmw-1;
+	auto maxY = y+tmh>=screenHeight?screenHeight-1:y+tmh-1;
 	for(auto yy = y;yy<=maxY; yy++) {
 		for(auto xx = x;xx<=maxX;xx++){
 			auto tmxx = (tmx+(xx-x))%(tilemapTotalWidthTiles*tileSide);
@@ -148,6 +148,9 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tmPixelY = tmyy % tileSide;
 			auto tileNum = tilemaps[tilemapNum][tmTileY*tilemapTotalWidthTiles+tmTileX];
 			auto realTileNum = tileNum & 0x3FFF;
+			if(realTileNum >= numTiles) {
+				continue;
+			}
 			//if(tileNum != 0) {
 			//	std::cout<<tmTileX<<" "<<tmTileY<<" "<<tileNum<<" "<<realTileNum<<std::endl;
 			//}
