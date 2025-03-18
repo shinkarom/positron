@@ -9,19 +9,24 @@ std::array<uint16_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
 std::array<uint32_t, (1<<16)> palette;
 
-void posiAPICls(uint32_t color) {
-	color = 0xFF000000 | (color & 0x00FFFFFF);
-	for(int i = 0; i < screenWidth * screenHeight; i++) {
-		frameBuffer[i] = color;
-	}
-}
-
-void posiAPIPutPixel(int x, int y, uint32_t color) {
+void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return;
 	}
-	auto newColor = 0xFF000000 | (color & 0x00FFFFFF);
-	frameBuffer[y * screenWidth + x] = newColor;
+	frameBuffer[y * screenWidth + x] = color;
+}
+
+void posiAPICls(uint16_t color) {
+	color = 0xFF000000 | (color & 0x00FFFFFF);
+	for(int j = 0; j < screenHeight; j++) {
+		for(int i = 0; i < screenWidth; i++) {
+			posiAPIPutPixel(i, j, color);
+		}
+	}
+}
+
+void posiAPIPutPixel(int x, int y, uint16_t color) {
+	posiPutPixel(x, y, palette[color]);
 }
 
 void posiRedraw(uint32_t* buffer) {	
@@ -101,7 +106,7 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	for(auto yy = 0; yy < h*tileSide; yy++) {
 		for(auto xx = 0; xx < w*tileSide; xx++){
 			auto colorPos = tileStart + yy*pixelRowSize + xx;
-			auto pixelColor = palette[tiles[colorPos]];
+			auto pixelColor = tiles[colorPos];
 			auto posX = flipHorz ? x + w * tileSide - xx : x+xx;
 			auto posY = flipVert ? y + h * tileSide - yy : y+yy;
 			posiAPIPutPixel(posX,posY, pixelColor);
@@ -160,7 +165,7 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tileColumn = idRemainder % 16;
 			auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
 			auto pixelPos = tileStart + tmPixelY*pixelRowSize+tmPixelX;
-			auto color = palette[tiles[pixelPos]];
+			auto color = tiles[pixelPos];
 			posiAPIPutPixel(xx, yy,color);
 		}
 	}

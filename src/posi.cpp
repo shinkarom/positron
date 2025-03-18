@@ -37,6 +37,8 @@ bool posiLoad(std::string fileName) {
 		return false;
 	}
 	
+	gpuLoad();
+	
 	auto retrieved_data = dbLoadByName("code", "main");
 	if(!retrieved_data) {
 		std::cout<<"Error: Could not load main script."<<std::endl;
@@ -47,8 +49,6 @@ bool posiLoad(std::string fileName) {
 	if(!luaEvalMain(retrieved_code)){
 		return false;
 	}
-	
-	gpuLoad();
 	
 	return true;
 }
