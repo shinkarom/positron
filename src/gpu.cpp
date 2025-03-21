@@ -45,11 +45,15 @@ void gpuInit() {
             uint8_t r = (color16 >> 8) & 0xF;
             uint8_t g = (color16 >> 4) & 0xF;
             uint8_t b = color16 & 0xF;
+			uint8_t ab = (a & 0x8) >> 1;
+			uint8_t rb = (a & 0x4) << 1;
+			uint8_t gb = (a & 0x2) << 2;
+			uint8_t bb  = (a & 0x1) << 3;
 
             // Construct the 8-bit Red, Green, and Blue components
-            uint8_t red = (r << 4) | a;
-            uint8_t green = (g << 4) | a;
-            uint8_t blue = (b << 4) | a;
+            uint8_t red = (r << 4) | rb | ab;
+            uint8_t green = (g << 4) | gb | ab;
+            uint8_t blue = (b << 4) | bb | ab;
 
             // The alpha channel for non-transparent colors is 0xFF
             uint32_t alpha = 0xFF << 24;
