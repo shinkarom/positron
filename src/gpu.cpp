@@ -37,19 +37,19 @@ void gpuInit() {
     for (uint32_t i = 0; i < (1 << 16); ++i) {
         if (i == 0) {
             // Color 0 is transparent (RGBA: 0x00000000)
-            palette[0] = 0x00000000;
+            palette[i] = 0x00000000;
         } else {
             // Extract the bit fields from the 16-bit color
             uint16_t color16 = static_cast<uint16_t>(i);
-            uint8_t a = (color16 >> 15) & 0x01;
-            uint8_t r = (color16 >> 10) & 0x1F;
-            uint8_t g = (color16 >> 5) & 0x1F;
-            uint8_t b = color16 & 0x1F;
+            uint8_t a = (color16 >> 12) & 0xF;
+            uint8_t r = (color16 >> 8) & 0xF;
+            uint8_t g = (color16 >> 4) & 0xF;
+            uint8_t b = color16 & 0xF;
 
             // Construct the 8-bit Red, Green, and Blue components
-            uint8_t red = (r << 3) | (a << 2);
-            uint8_t green = (g << 3) | (a << 2);
-            uint8_t blue = (b << 3) | (a << 2);
+            uint8_t red = (r << 4) | a;
+            uint8_t green = (g << 4) | a;
+            uint8_t blue = (b << 4) | a;
 
             // The alpha channel for non-transparent colors is 0xFF
             uint32_t alpha = 0xFF << 24;
