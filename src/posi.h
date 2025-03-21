@@ -7,7 +7,8 @@
 
 constexpr auto screenWidth = 256;
 constexpr auto screenHeight = 224;
-constexpr auto audioFramesPerTick = 44100 / 60;
+constexpr auto audioSampleRate = 44100;
+constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
@@ -61,6 +62,10 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
 uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
 void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry);
+
+void apuInit();
+void apuProcess();
+void apuReset();
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);

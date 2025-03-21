@@ -3,15 +3,13 @@
 #include <cstdint>
 #include <iostream>
 #include <cstring>
-#include <array>
-
-std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 
 int gameState;
 
 void posiPoweron() {	
 	luaInit();
 	gpuInit();
+	apuInit();
 	gameState = POSI_STATE_GAME;
 }
 
@@ -23,12 +21,12 @@ void posiPoweroff() {
 
 bool posiRun() {
 	switch(gameState) {
-		case POSI_STATE_GAME:
+		case POSI_STATE_GAME: {}
 			return posiStateGameRun();
 		default:
 			return false;
 	}
-}\
+}
 
 
 
@@ -53,10 +51,6 @@ bool posiLoad(std::string fileName) {
 	return true;
 }
 
-int16_t* posiAudiofeed() {
-	return soundBuffer.data();
-}
-
 void posiChangeState(int newState) {
 	switch(gameState) {
 		case POSI_STATE_GAME:
@@ -73,8 +67,6 @@ void posiChangeState(int newState) {
 }
 
 bool posiStateGameRun() {
-	for(int i = 0; i < audioFramesPerTick*2; i++) {
-		soundBuffer[i] = 0;
-	}
+	apuReset();
 	return luaCallTick();
 }

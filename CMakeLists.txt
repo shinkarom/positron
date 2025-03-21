@@ -51,14 +51,15 @@ target_include_directories(lua PUBLIC ${LUA_PATH})
 
 add_executable(${PROJ_NAME}
 	src/thirdparty/sqlite3.c
-	src/thirdparty/m4p.c
 	src/thirdparty/miniz.c
+	src/thirdparty/opl3.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
 	src/input.cpp
 	src/db.cpp
 	src/script.cpp
+	src/apu.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua)
