@@ -129,10 +129,6 @@ static int lua_api_isPressed(lua_State *L) {
 
     buttonNumber = luaL_checkinteger(L, 1);
 
-    if (buttonNumber < 0 || buttonNumber >= numInputButtons) { // Assuming numInputButtons is defined in your C code
-        return luaL_argerror(L, 1, "buttonNumber is out of range"); // More specific arg error
-    }
-
     bool result = API_isPressed((int32_t)buttonNumber); // Call your native C function
 
     lua_pushboolean(L, result); // Push the boolean result onto the Lua stack
@@ -152,10 +148,6 @@ static int lua_api_isJustPressed(lua_State *L) {
     }
 
     buttonNumber = luaL_checkinteger(L, 1);
-
-    if (buttonNumber < 0 || buttonNumber >= numInputButtons) {
-        return luaL_argerror(L, 1, "buttonNumber is out of range");
-    }
 
     bool result = API_isJustPressed((int32_t)buttonNumber);
 
@@ -177,9 +169,6 @@ static int lua_api_isJustReleased(lua_State *L) {
 
     buttonNumber = luaL_checkinteger(L, 1);
 
-    if (buttonNumber < 0 || buttonNumber >= numInputButtons) {
-        return luaL_argerror(L, 1, "buttonNumber is out of range");
-    }
 
     bool result = API_isJustReleased((int32_t)buttonNumber);
 

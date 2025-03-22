@@ -1,23 +1,21 @@
 #include "posi.h"
 
 #include <array>
-
-#include "thirdparty/opl3.h"
+#include <iostream>
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 
-opl3_chip chip;
 
 int16_t* posiAudiofeed() {
 	return soundBuffer.data();
 }
 
 void apuInit() {
-	OPL3_Reset(&chip, audioSampleRate);
+	apuReset();
 }
 
 void apuProcess() {
-	OPL3_GenerateStream(&chip, soundBuffer.data(), audioFramesPerTick);
+	
 }
 
 void apuReset() {

@@ -20,6 +20,7 @@ void posiPoweroff() {
 }
 
 bool posiRun() {
+	apuProcess();
 	switch(gameState) {
 		case POSI_STATE_GAME: {}
 			return posiStateGameRun();
@@ -67,6 +68,6 @@ void posiChangeState(int newState) {
 }
 
 bool posiStateGameRun() {
-	apuReset();
+	
 	return luaCallTick();
 }
