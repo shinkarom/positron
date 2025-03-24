@@ -66,6 +66,8 @@ void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry);
 void apuInit();
 void apuProcess();
 void apuReset();
+void posiAPITrackStop();
+void posiAPITrackPlay(std::string trackName);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);

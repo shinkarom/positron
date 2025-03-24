@@ -56,7 +56,7 @@ void loadTilePages() {
 
 void loadTilemaps() {
 	for(auto i = 0; i<numTilemaps; i++) {
-		auto x = dbLoadByNumber("tilemaps", i);
+		auto x = dbLoadByNumber("tilemap", i);
 		if(!x || x->size() != tilemapTotalBytes) continue;
 		memcpy(tilemaps[i].data(), x->data(), tilemapTotalBytes);
 	}

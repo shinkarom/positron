@@ -272,6 +272,23 @@ static int l_posiAPITilemapEntry(lua_State *L) {
   }
 }
 
+// Lua binding for posiAPITrackStop
+static int l_posiAPITrackStop(lua_State *L) {
+  posiAPITrackStop();
+  return 0; // No return values to push onto the Lua stack
+}
+
+// Lua binding for posiAPITrackPlay
+static int l_posiAPITrackPlay(lua_State *L) {
+  const char *trackName = luaL_checkstring(L, 1); // Get the first argument as a string
+  if (trackName) {
+    posiAPITrackPlay(std::string(trackName));
+  } else {
+    luaL_error(L, "Argument #1 to posiAPITrackPlay must be a string");
+  }
+  return 0;
+}
+
 static int l_cppPrint(lua_State *L) {
     int nargs = lua_gettop(L); // Number of arguments passed from Lua
     std::string output = "";
@@ -344,6 +361,8 @@ void luaInit() {
     lua_register(L, "API_drawSprite", lua_api_drawSprite);
 	lua_register(L, "API_drawTilemap", l_posiAPIDrawTilemap);
 	lua_register(L, "API_tilemapEntry", l_posiAPITilemapEntry);
+	lua_register(L, "API_trackPlay", l_posiAPITrackPlay);
+	lua_register(L, "API_trackStop", l_posiAPITrackStop);
 	lua_register(L, "require", my_require_cpp);
 	lua_register(L, "print", l_cppPrint);
 

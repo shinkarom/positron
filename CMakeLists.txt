@@ -52,6 +52,7 @@ target_include_directories(lua PUBLIC ${LUA_PATH})
 add_executable(${PROJ_NAME}
 	src/thirdparty/sqlite3.c
 	src/thirdparty/miniz.c
+	src/thirdparty/m4p.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
