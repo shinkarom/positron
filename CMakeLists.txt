@@ -53,6 +53,8 @@ add_executable(${PROJ_NAME}
 	src/thirdparty/sqlite3.c
 	src/thirdparty/miniz.c
 	src/thirdparty/m4p.c
+	src/thirdparty/tsf.c
+	src/thirdparty/tml.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
