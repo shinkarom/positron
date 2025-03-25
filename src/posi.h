@@ -5,8 +5,8 @@
 #include <vector>
 #include <optional>
 
-constexpr auto screenWidth = 256;
-constexpr auto screenHeight = 256;
+constexpr auto screenWidth = 224;
+constexpr auto screenHeight = 224;
 constexpr auto audioSampleRate = 44100;
 constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
