@@ -1,6 +1,7 @@
 #include "posi.h"
 
 #include <iostream>
+#include <format>
 
 #include "thirdparty/sqlite3.h"
 #include "thirdparty/miniz.h"
@@ -27,12 +28,13 @@ std::vector<uint8_t> decompress(const std::vector<uint8_t>& data) {
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name) {
 	sqlite3_stmt* stmt;
-	std::string query = "select data, compressed from "+ tableName +" where name=?";
+	std::string query = "select data, compressed from data where name=? and type=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return std::nullopt;
 	} 
 	sqlite3_bind_text(stmt, 1, name.c_str(),-1, nullptr);
+	sqlite3_bind_text(stmt, 2, tableName.c_str(),-1, nullptr);
 
 	if(sqlite3_step(stmt) != SQLITE_ROW) {
 		return std::nullopt;
@@ -58,32 +60,8 @@ std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int nu
 	if(number < 0 || number > 255) {
 		return std::nullopt;
 	}
-	sqlite3_stmt* stmt;
-	std::string query = "select data, compressed from "+ tableName +" where number=?";
-	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
-		return std::nullopt;
-	} 
-	sqlite3_bind_int(stmt, 1, number);
-
-	if(sqlite3_step(stmt) != SQLITE_ROW) {
-		return std::nullopt;
-	}
-	
-	const void* blobData = sqlite3_column_blob(stmt, 0);
-    int blobSize = sqlite3_column_bytes(stmt, 0);
-    bool isCompressed = sqlite3_column_int(stmt, 1);
-	
-	std::vector<uint8_t> storedData(static_cast<const uint8_t*>(blobData), 
-                                        static_cast<const uint8_t*>(blobData) + blobSize);
-	
-	sqlite3_finalize(stmt);
-	
-	if(isCompressed) {
-		return decompress(storedData) ;
-	} else {
-		return storedData;
-	}
+	auto r = std::format("{:02X}", number);
+	return dbLoadByName(tableName, r);
 }
 
 void dbDisconnect() {
