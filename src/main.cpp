@@ -141,8 +141,6 @@ int main(int argc, char *argv[])
 
 		SDL_PutAudioStreamData(stream, audioBuffer, audioFramesPerTick *2 * 2);
 		
-		
-		
 		void* texturePixels;
 		int pitch;
 		SDL_LockTexture(texture, nullptr, &texturePixels, &pitch);
