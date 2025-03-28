@@ -4,8 +4,10 @@
 #include <iostream>
 
 #include "thirdparty/m4p.h"
-#include "thirdparty/tsf.h"
-#include "thirdparty/tml.h"
+
+#include "ymfm.h"
+#include "ymfm_opn.h"
+
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 
