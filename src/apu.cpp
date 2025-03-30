@@ -4,12 +4,11 @@
 #include <iostream>
 
 #include "thirdparty/m4p.h"
-
-#include "ymfm.h"
-#include "ymfm_opn.h"
-
+#include "chip.h"
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
+
+chipInterface chips[2];
 
 bool playing = false;
 

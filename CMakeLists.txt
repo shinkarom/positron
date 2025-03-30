@@ -74,6 +74,7 @@ add_executable(${PROJ_NAME}
 	src/db.cpp
 	src/script.cpp
 	src/apu.cpp
+	src/chip.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua ymfm)
