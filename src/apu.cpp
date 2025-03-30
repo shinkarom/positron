@@ -7,7 +7,6 @@
 #include "chip.h"
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
-
 chipInterface chips[2];
 
 bool playing = false;
@@ -22,7 +21,7 @@ void apuInit() {
 
 void apuProcess() {
 	if(playing) {
-		m4p_GenerateSamples(soundBuffer.data(), audioFramesPerTick);
+		//m4p_GenerateSamples(soundBuffer.data(), audioFramesPerTick);
 	}
 }
 
@@ -35,13 +34,17 @@ void apuReset() {
 void posiAPITrackPlay(std::string trackName) {
 	auto x = dbLoadByName("track",trackName);
 	if(!x) return;
-	m4p_LoadFromData(x->data(), x->size(), audioSampleRate, audioFramesPerTick);
-	m4p_PlaySong();
-	playing = true;
+	//m4p_LoadFromData(x->data(), x->size(), audioSampleRate, audioFramesPerTick);
+	//m4p_PlaySong();
+	if(chips[0].loadFile(*x)){
+		playing = true;
+		std::cout<<"Loaded file "<<trackName<<std::endl;
+	}
+	
 }
 
 void posiAPITrackStop() {
-	m4p_Stop();
+	//m4p_Stop();
 	playing = false;
 	apuReset();
 }
