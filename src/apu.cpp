@@ -3,7 +3,6 @@
 #include <array>
 #include <iostream>
 
-#include "thirdparty/m4p.h"
 #include "chip.h"
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
@@ -21,7 +20,7 @@ void apuInit() {
 
 void apuProcess() {
 	if(playing) {
-		//m4p_GenerateSamples(soundBuffer.data(), audioFramesPerTick);
+		chips[0].generate(soundBuffer.data(),audioFramesPerTick);
 	}
 }
 
@@ -34,8 +33,6 @@ void apuReset() {
 void posiAPITrackPlay(std::string trackName) {
 	auto x = dbLoadByName("track",trackName);
 	if(!x) return;
-	//m4p_LoadFromData(x->data(), x->size(), audioSampleRate, audioFramesPerTick);
-	//m4p_PlaySong();
 	if(chips[0].loadFile(*x)){
 		playing = true;
 		std::cout<<"Loaded file "<<trackName<<std::endl;
@@ -44,7 +41,6 @@ void posiAPITrackPlay(std::string trackName) {
 }
 
 void posiAPITrackStop() {
-	//m4p_Stop();
 	playing = false;
 	apuReset();
 }
