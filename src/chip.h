@@ -19,6 +19,8 @@ class chipInterface: public ymfm::ymfm_interface {
 		int filePos;
 		float chipStep;
 		float chipPos;
+		int16_t prevFrame[2];
+		int16_t nextFrame[2];
 		uint32_t read32FromOffset(int offset);
 		void generateOneFrame(int16_t* buf);
 		int16_t* generateNFrames(int16_t* buf, int numSamples = 1, bool overdub = false);

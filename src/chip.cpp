@@ -22,6 +22,16 @@ bool chipInterface::loadFile(std::vector<uint8_t>& file) {
 	auto rate = chip.sample_rate(clock);
 	chipStep = rate / (sampleRate*1.0);
 	std::cout<<"step "<<chipStep<<std::endl;
+	
+	chipPos = 0.0;
+	ymfm::ymf262::output_data tmpBuf;
+	chip.generate(&tmpBuf);
+	prevFrame[0] = tmpBuf.data[0];
+	prevFrame[1] = tmpBuf.data[1];
+	chip.generate(&tmpBuf);
+	nextFrame[0] = tmpBuf.data[0];
+	nextFrame[1] = tmpBuf.data[1];
+	
 	return true;
 }
 
@@ -72,8 +82,19 @@ int16_t* chipInterface::generateNFrames(int16_t* buf, int numSamples, bool overd
 }
 
 void chipInterface::generateOneFrame(int16_t* buf) {
-	ymfm::ymf262::output_data tmpBuf;
-	chip.generate(&tmpBuf);
-	*buf = tmpBuf.data[0];
-	*(buf+1) = tmpBuf.data[1];
+	int16_t sample0 = prevFrame[0] + (nextFrame[0] - prevFrame[0])*chipPos;
+	int16_t sample1 = prevFrame[1] + (nextFrame[1] - prevFrame[1])*chipPos;
+	*buf = sample0;
+	*(buf+1) = sample1;
+	
+	chipPos += chipStep;
+	if(chipPos >= 1.0) {
+		chipPos -= 1.0;
+		prevFrame[0] = nextFrame[0];
+		prevFrame[1] = nextFrame[1];
+		ymfm::ymf262::output_data tmpBuf;
+		chip.generate(&tmpBuf);
+		nextFrame[0] = tmpBuf.data[0];
+		nextFrame[1] = tmpBuf.data[1];
+	}
 }
