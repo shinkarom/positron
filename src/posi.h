@@ -75,3 +75,6 @@ bool API_isJustPressed(int buttonNumber);
 bool API_isJustReleased(int buttonNumber);
 
 bool posiStateGameRun();
+
+int16_t floatToInt16(float sample);
+float int16ToFloat(int16_t sample);

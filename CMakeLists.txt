@@ -49,10 +49,14 @@ add_library(lua STATIC
 )
 target_include_directories(lua PUBLIC ${LUA_PATH})
 
+add_library(libfmsynth STATIC
+	vendor/libfmsynth/src/fmsynth.c
+)
+target_include_directories(libfmsynth PUBLIC vendor/libfmsynth/include)
+
 add_executable(${PROJ_NAME}
 	src/thirdparty/sqlite3.c
 	src/thirdparty/miniz.c
-	src/thirdparty/opl3.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
@@ -63,7 +67,7 @@ add_executable(${PROJ_NAME}
 	src/chip.cpp
 )
 
-target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua)
+target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua libfmsynth)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX
