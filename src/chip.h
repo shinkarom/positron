@@ -2,26 +2,26 @@
 #include <vector>
 
 #include "posi.h"
-#include "ymfm.h"
-#include "ymfm_opl.h"
+#include "thirdparty/opl3.h"
 
-class chipInterface: public ymfm::ymfm_interface {
+class chipInterface {
 	public:
 		chipInterface(int sampleRate = audioSampleRate);
-		bool loadFile(std::vector<uint8_t>& file);
-		void generate(int16_t* buf, int numSamples = 1, bool overdub = false);
+		bool loadFile(std::vector<uint8_t> file);
+		void generate(int16_t* buf, int numSamples = 1);
 	private:
-		ymfm::ymf262 chip;
+		opl3_chip chip;
 		int sampleRate;
-		std::vector<uint8_t>* file;
+		std::vector<uint8_t> file;
 		int dataOffset;
 		int eofOffset;
 		int filePos;
-		float chipStep;
-		float chipPos;
-		int16_t prevFrame[2];
-		int16_t nextFrame[2];
+		int bufferPos;
+		float delay;
+		bool active;
+		int one60;
+		int one50;
 		uint32_t read32FromOffset(int offset);
-		void generateOneFrame(int16_t* buf);
-		int16_t* generateNFrames(int16_t* buf, int numSamples = 1, bool overdub = false);
+		void parseInstruction();
+		void writeRegister(uint16_t reg, uint8_t value);
 };

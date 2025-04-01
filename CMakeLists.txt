@@ -49,23 +49,10 @@ add_library(lua STATIC
 )
 target_include_directories(lua PUBLIC ${LUA_PATH})
 
-set(YMFM_PATH vendor/ymfm/src)
-add_library(ymfm STATIC
-	${YMFM_PATH}/ymfm_adpcm.cpp
-	${YMFM_PATH}/ymfm_misc.cpp
-	${YMFM_PATH}/ymfm_opl.cpp
-	${YMFM_PATH}/ymfm_opm.cpp
-	${YMFM_PATH}/ymfm_opn.cpp
-	${YMFM_PATH}/ymfm_opq.cpp
-	${YMFM_PATH}/ymfm_opz.cpp
-	${YMFM_PATH}/ymfm_pcm.cpp
-	${YMFM_PATH}/ymfm_ssg.cpp
-)
-target_include_directories(ymfm PUBLIC ${YMFM_PATH})
-
 add_executable(${PROJ_NAME}
 	src/thirdparty/sqlite3.c
 	src/thirdparty/miniz.c
+	src/thirdparty/opl3.c
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
@@ -76,7 +63,7 @@ add_executable(${PROJ_NAME}
 	src/chip.cpp
 )
 
-target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua ymfm)
+target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX

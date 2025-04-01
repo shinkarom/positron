@@ -33,7 +33,7 @@ void apuReset() {
 void posiAPITrackPlay(std::string trackName) {
 	auto x = dbLoadByName("track",trackName);
 	if(!x) return;
-	if(chips[0].loadFile(*x)){
+	if(chips[0].loadFile((*x))){
 		playing = true;
 		std::cout<<"Loaded file "<<trackName<<std::endl;
 	}

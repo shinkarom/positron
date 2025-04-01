@@ -2,99 +2,128 @@
 
 #include <iostream>
 
-chipInterface::chipInterface(int sampleRate) : chip(*this) {
+chipInterface::chipInterface(int sampleRate) {
 	this->sampleRate = sampleRate;
+	OPL3_Reset(&chip,sampleRate);
+	writeRegister(0x105,0x01);
+	one60 = sampleRate / 60;
+	one50 = sampleRate / 50;
 }
 
-bool chipInterface::loadFile(std::vector<uint8_t>& file) {
+bool chipInterface::loadFile(std::vector<uint8_t> file) {
 	if(!(file[0] == 'V' && file[1] == 'g' && file[2] == 'm' && file[3] == ' ')) {
 		return false;
 	}
-	this->file = &file;
+	this->file = file;
 	auto offset = read32FromOffset(0x34);
-	std::cout<<"offset "<<offset<<std::endl;
 	dataOffset = offset+0x34;
+	filePos = dataOffset;
 	auto eof = read32FromOffset(0x04);
-	std::cout<<"eof "<<eof<<std::endl;
 	eofOffset = eof+0x04;
-	auto clock = read32FromOffset(0x5C);
-	std::cout<<"clock "<<clock<<std::endl;
-	auto rate = chip.sample_rate(clock);
-	chipStep = rate / (sampleRate*1.0);
-	std::cout<<"step "<<chipStep<<std::endl;
-	
-	chipPos = 0.0;
-	ymfm::ymf262::output_data tmpBuf;
-	chip.generate(&tmpBuf);
-	prevFrame[0] = tmpBuf.data[0];
-	prevFrame[1] = tmpBuf.data[1];
-	chip.generate(&tmpBuf);
-	nextFrame[0] = tmpBuf.data[0];
-	nextFrame[1] = tmpBuf.data[1];
+
+	active = true;
 	
 	return true;
 }
 
 uint32_t chipInterface::read32FromOffset(int offset) {
-	uint8_t x1 = file->at(offset);
-	uint8_t x2 = file->at(offset+1);
-	uint8_t x3 = file->at(offset+2);
-	uint8_t x4 = file->at(offset+3);
+	uint8_t x1 = file[offset];
+	uint8_t x2 = file[offset+1];
+	uint8_t x3 = file[offset+2];
+	uint8_t x4 = file[offset+3];
 	return (x4<<24) | (x3<<16) | (x2 <<8) | x1;
 }
 
-void chipInterface::generate(int16_t* buf, int numSamples, bool overdub) {
-	generateNFrames(buf, numSamples, overdub);
-}
-
-int16_t* chipInterface::generateNFrames(int16_t* buf, int numSamples, bool overdub) {
-	int16_t tmpBuf[2];
-	auto bufPos = buf;
-	for(auto i = 0; i < numSamples; i++) {
-		generateOneFrame(tmpBuf);
-		if(!overdub) {
-			*bufPos = tmpBuf[0];
-			*(bufPos+1) = tmpBuf[1];
+void chipInterface::generate(int16_t* buf, int numSamples) {
+	if(!active) return;
+	bufferPos = 0;
+	//std::cout<<"new frame delay "<<delay<<std::endl;
+	while(bufferPos < numSamples) {
+		if(delay) {
+			int rem = numSamples - bufferPos;
+			int r = delay > rem ? rem : delay;
+			OPL3_GenerateStream(&chip,&buf[bufferPos], r);
+			//std::cout<<"generating "<<r<<std::endl;
+			delay -= r;
+			bufferPos += r * 2;
 		} else {
-			auto b1 = *bufPos;
-			auto b2 = *(bufPos+1);
-			b1 += tmpBuf[0];
-			b2 += tmpBuf[1];
-			if(b1 < INT16_MIN) {
-				b1 = 0;
-			}
-			if(b1 > INT16_MAX) {
-				b1 = INT16_MAX;
-			}
-			if(b2 < INT16_MIN) {
-				b2 = 0;
-			}
-			if(b2 > INT16_MAX) {
-				b2 = INT16_MAX;
-			}
-			*bufPos = b1;
-			*(bufPos+1) = b2;
+			parseInstruction();
 		}
 		
-		bufPos += 2;
 	}
-	return bufPos;
 }
 
-void chipInterface::generateOneFrame(int16_t* buf) {
-	int16_t sample0 = prevFrame[0] + (nextFrame[0] - prevFrame[0])*chipPos;
-	int16_t sample1 = prevFrame[1] + (nextFrame[1] - prevFrame[1])*chipPos;
-	*buf = sample0;
-	*(buf+1) = sample1;
-	
-	chipPos += chipStep;
-	if(chipPos >= 1.0) {
-		chipPos -= 1.0;
-		prevFrame[0] = nextFrame[0];
-		prevFrame[1] = nextFrame[1];
-		ymfm::ymf262::output_data tmpBuf;
-		chip.generate(&tmpBuf);
-		nextFrame[0] = tmpBuf.data[0];
-		nextFrame[1] = tmpBuf.data[1];
+void chipInterface::writeRegister(uint16_t reg, uint8_t value) {
+	OPL3_WriteReg(&chip, reg,value);
+	//std::cout<<std::hex<<"written "<<int(value)<<" to "<<reg<<std::dec<<std::endl;
+}
+
+void chipInterface::parseInstruction() {
+	uint8_t instr = file[filePos];
+	//std::cout<<std::hex<<filePos<<" "<<int(instr)<<std::dec<<std::endl;
+	switch(instr) {
+		case 0x5e: {
+			auto reg = file[filePos+1];
+			auto val = file[filePos+2];
+			writeRegister(reg, val);
+			filePos+=3;
+			break;
+		}
+		case 0x5f: {
+			auto reg = file[filePos+1];
+			auto val = file[filePos+2];
+			writeRegister(reg|0x100, val);
+			filePos+=3;
+			break;
+		}
+		case 0x61: {
+			uint16_t d = (file[filePos+2]<<8)|file[filePos+1];
+			d = static_cast<uint16_t>(d * sampleRate / 44100.0);
+			delay += d;
+			//std::cout<<"set delay to "<<delay<<" "<<d<<std::endl;
+			filePos+=3;
+			break;
+		}
+		case 0x62: {
+			delay += one60;
+			//std::cout<<"set delay to "<<delay<<std::endl;
+			filePos++;
+			break;
+		}
+		case 0x63: {
+			delay += one50;
+			//std::cout<<"set delay to "<<delay<<std::endl;
+			filePos++;
+			break;
+		}
+		case 0x66:
+			active = false;
+			break;
+		case 0x70:
+		case 0x71:
+		case 0x72:
+		case 0x73:
+		case 0x74:
+		case 0x75:
+		case 0x76:
+		case 0x77:
+		case 0x78:
+		case 0x79:
+		case 0x7A:
+		case 0x7B:
+		case 0x7C:
+		case 0x7D:
+		case 0x7E:
+		case 0x7F: {
+			auto d = instr - 0x70 + 1;
+			d = static_cast<uint16_t>(d * sampleRate / 44100.0);
+			delay += d;
+			std::cout<<"set delay to "<<delay<<" "<<d<<std::endl;
+			filePos++;
+			break;
+		}
+		default:
+			std::cout<<"Unknown instruction at "<<std::hex<<filePos<<": "<<int(instr)<<std::dec<<std::endl;
+			break;
 	}
 }
