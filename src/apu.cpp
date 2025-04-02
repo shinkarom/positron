@@ -6,7 +6,7 @@
 #include "chip.h"
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
-chipInterface chips[2];
+chipInterface chips[numAudioChannels];
 
 bool playing = false;
 
@@ -19,14 +19,20 @@ void apuInit() {
 }
 
 void apuProcess() {
-	if(playing) {
-		chips[0].generate(soundBuffer.data(),audioFramesPerTick);
+	for(int i = 0; i < audioFramesPerTick*2; i++) {
+		soundBuffer[i] = 0;
+	}
+	for(int i = 0; i<numAudioChannels; i++) {
+		chips[i].generate(soundBuffer.data(),audioFramesPerTick);
 	}
 }
 
 void apuReset() {
 	for(int i = 0; i < audioFramesPerTick*2; i++) {
 		soundBuffer[i] = 0;
+	}
+	for(int i = 0; i<numAudioChannels; i++) {
+		chips[i].reset();
 	}
 }
 
@@ -43,4 +49,18 @@ void posiAPITrackPlay(std::string trackName) {
 void posiAPITrackStop() {
 	playing = false;
 	apuReset();
+}
+
+void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter,float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return;
+	}
+	chips[channelNumber].setOperatorParameter(operatorNumber, parameter, value);
+}
+
+float posiAPIgetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].getOperatorParameter(operatorNumber, parameter);
 }

@@ -32,6 +32,7 @@ constexpr auto tilemapTotalTiles = tilemapTotalWidthTiles * tilemapTotalHeightTi
 constexpr auto tilemapTotalBytes = tilemapTotalTiles * 2;
 
 constexpr auto numInputButtons = 12;
+constexpr auto numAudioChannels = 8;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
@@ -69,6 +70,10 @@ void apuReset();
 bool apuLoadFile(std::vector<uint8_t>& file);
 void posiAPITrackStop();
 void posiAPITrackPlay(std::string trackName);
+void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter,float value);
+float posiAPIgetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter);
+
+
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
 bool API_isJustPressed(int buttonNumber);
