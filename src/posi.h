@@ -71,8 +71,15 @@ bool apuLoadFile(std::vector<uint8_t>& file);
 void posiAPITrackStop();
 void posiAPITrackPlay(std::string trackName);
 void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter,float value);
-float posiAPIgetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter);
-
+float posiAPIGetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter);
+void posiAPISetGlobalParameter(int channelNumber,uint8_t parameter, float value);
+float posiAPIGetGlobalParameter(int channelNumber,uint8_t parameter);
+void posiAPINoteOn(int channelNumber,uint8_t note, uint8_t velocity);
+void posiAPINoteOff(int channelNumber,uint8_t note);
+void posiAPISetSustain(int channelNumber,bool enable);
+void posiAPISetModWheel(int channelNumber,uint8_t wheel);
+void posiAPISetPitchBend(int channelNumber,uint16_t value);
+void posiAPIReleaseAll(int channelNumber);
 
 void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
