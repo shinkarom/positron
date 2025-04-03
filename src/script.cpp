@@ -289,6 +289,119 @@ static int l_posiAPITrackPlay(lua_State *L) {
   return 0;
 }
 
+static int l_posiAPIOperatorParameter(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 4) {
+    // Setter: channelNumber, operatorNumber, parameter, value
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t operatorNumber = (uint8_t)luaL_checkinteger(L, 2);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 3);
+    float value = (float)luaL_checknumber(L, 4);
+
+    posiAPISetOperatorParameter(channelNumber, operatorNumber, parameter, value);
+    return 0; // No return values
+  } else if (num_args == 3) {
+    // Getter: channelNumber, operatorNumber, parameter
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t operatorNumber = (uint8_t)luaL_checkinteger(L, 2);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 3);
+
+    float result = posiAPIGetOperatorParameter(channelNumber, operatorNumber, parameter);
+    lua_pushnumber(L, (lua_Number)result);
+    return 1; // One return value
+  } else {
+    // Invalid number of arguments
+    luaL_error(L, "Wrong number of arguments. Expected 3 (get) or 4 (set).");
+    return 0; // Should not reach here
+  }
+}
+
+// Combined Lua binding for setting or getting global parameter
+static int l_posiAPIGlobalParameter(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 3) {
+    // Setter: channelNumber, parameter, value
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
+    float value = (float)luaL_checknumber(L, 3);
+
+    posiAPISetGlobalParameter(channelNumber, parameter, value);
+    return 0; // No return values
+  } else if (num_args == 2) {
+    // Getter: channelNumber, parameter
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
+
+    float result = posiAPIGetGlobalParameter(channelNumber, parameter);
+    lua_pushnumber(L, (lua_Number)result);
+    return 1; // One return value
+  } else {
+    // Invalid number of arguments
+    luaL_error(L, "Wrong number of arguments. Expected 2 (get) or 3 (set).");
+    return 0; // Should not reach here
+  }
+}
+
+// Combined Lua binding for noteOff or releaseAll
+static int l_posiAPINoteOff(lua_State *L) {
+  int num_args = lua_gettop(L);
+  int channelNumber = luaL_checkinteger(L, 1);
+
+  if (num_args == 2) {
+    // Note Off: channelNumber, note
+    uint8_t note = (uint8_t)luaL_checkinteger(L, 2);
+    posiAPINoteOff(channelNumber, note);
+    return 0;
+  } else if (num_args == 1) {
+    // Release All: channelNumber
+    posiAPIReleaseAll(channelNumber);
+    return 0;
+  } else {
+    // Invalid number of arguments
+    luaL_error(L, "Wrong number of arguments. Expected 1 (releaseAll) or 2 (noteOff).");
+    return 0; // Should not reach here
+  }
+}
+
+// Lua binding for posiAPINoteOn
+static int l_posiAPINoteOn(lua_State *L) {
+  int channelNumber = luaL_checkinteger(L, 1);
+  uint8_t note = (uint8_t)luaL_checkinteger(L, 2);
+  uint8_t velocity = (uint8_t)luaL_checkinteger(L, 3);
+
+  posiAPINoteOn(channelNumber, note, velocity);
+  return 0;
+}
+
+// Lua binding for posiAPISetSustain
+static int l_posiAPISetSustain(lua_State *L) {
+  int channelNumber = luaL_checkinteger(L, 1);
+  bool enable = lua_toboolean(L, 2); // Lua booleans are 0 or 1
+
+  posiAPISetSustain(channelNumber, enable);
+  return 0;
+}
+
+// Lua binding for posiAPISetModWheel
+static int l_posiAPISetModWheel(lua_State *L) {
+  int channelNumber = luaL_checkinteger(L, 1);
+  uint8_t wheel = (uint8_t)luaL_checkinteger(L, 2);
+
+  posiAPISetModWheel(channelNumber, wheel);
+  return 0;
+}
+
+// Lua binding for posiAPISetPitchBend
+static int l_posiAPISetPitchBend(lua_State *L) {
+  int channelNumber = luaL_checkinteger(L, 1);
+  uint16_t value = (uint16_t)luaL_checkinteger(L, 2);
+
+  posiAPISetPitchBend(channelNumber, value);
+  return 0;
+}
+
 static int l_cppPrint(lua_State *L) {
     int nargs = lua_gettop(L); // Number of arguments passed from Lua
     std::string output = "";
@@ -363,6 +476,13 @@ void luaInit() {
 	lua_register(L, "API_tilemapEntry", l_posiAPITilemapEntry);
 	lua_register(L, "API_trackPlay", l_posiAPITrackPlay);
 	lua_register(L, "API_trackStop", l_posiAPITrackStop);
+	lua_register(L, "API_operatorParameter", l_posiAPIOperatorParameter);
+	lua_register(L, "API_globalParameter", l_posiAPIGlobalParameter);
+	lua_register(L, "API_noteOn", l_posiAPINoteOn);
+	lua_register(L, "API_noteOff", l_posiAPINoteOff);
+	lua_register(L, "API_setSustain", l_posiAPISetSustain);
+	lua_register(L, "API_setModWheel", l_posiAPISetModWheel);
+	lua_register(L, "API_setPitchBend", l_posiAPISetPitchBend);
 	lua_register(L, "require", my_require_cpp);
 	lua_register(L, "print", l_cppPrint);
 
