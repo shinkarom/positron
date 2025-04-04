@@ -50,20 +50,6 @@ float posiAPIGetOperatorParameter(int channelNumber, uint8_t operatorNumber, uin
 	return chips[channelNumber].getOperatorParameter(operatorNumber, parameter);
 }
 
-float posiAPIFromNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
-	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
-		return 0.0;
-	}
-	return chips[channelNumber].fromNormalizedOperatorParameter(parameter, value);
-}
-
-float posiAPIToNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
-	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
-		return 0.0;
-	}
-	return chips[channelNumber].toNormalizedOperatorParameter(parameter, value);
-}
-
 void posiAPISetGlobalParameter(int channelNumber,uint8_t parameter, float value) {
 	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
 		return;
@@ -76,6 +62,20 @@ float posiAPIGetGlobalParameter(int channelNumber,uint8_t parameter) {
 		return 0.0;
 	}
 	return chips[channelNumber].getGlobalParameter(parameter);
+}
+
+float posiAPIFromNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].fromNormalizedOperatorParameter(parameter, value);
+}
+
+float posiAPIToNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].toNormalizedOperatorParameter(parameter, value);
 }
 
 float posiAPIFromNormalizedGlobalParameter(int channelNumber,uint8_t parameter, float value) {

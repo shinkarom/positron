@@ -38,15 +38,23 @@ void gpuInit() {
 }
 
 void loadTilePages() {
+	bool hasMask = false;
 	for(auto i = 0; i< numTilePages; i++) {
 		auto x = dbLoadByNumber("tiles", i);
 		if(!x || x->size() != pixelsPerPage*4) continue;
+		auto y = dbLoadByNumber("mask", i);
+		if(y && y->size() == pixelsPerPage) {
+			hasMask = true;
+		}
 		auto outputStart = tiles.data() + i * (pixelsPerPage);
 		uint32_t* dest = (uint32_t*)outputStart;
+		uint8_t* mask = (uint8_t*)(y->data());
 		const uint32_t* src = reinterpret_cast<const uint32_t*>((*x).data());
 		for (size_t i = 0; i < pixelsPerPage; i++) {
 			uint32_t pixel = src[i]; 
-			if(pixel & 0xFF000000) {
+			if(hasMask && mask[i] == 0) {
+				pixel = 0x00000000;
+			} else {
 				pixel |= 0xFF000000;
 			}
 			*dest++ = pixel;
