@@ -72,10 +72,6 @@ void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint
 float posiAPIGetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter);
 void posiAPISetGlobalParameter(int channelNumber,uint8_t parameter, float value);
 float posiAPIGetGlobalParameter(int channelNumber,uint8_t parameter);
-float posiAPIFromNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value);
-float posiAPIToNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value);
-float posiAPIFromNormalizedGlobalParameter(int channelNumber,uint8_t parameter, float value);
-float posiAPIToNormalizedGlobalParameter(int channelNumber,uint8_t parameter, float value);
 void posiAPINoteOn(int channelNumber,uint8_t note, uint8_t velocity);
 void posiAPINoteOff(int channelNumber,uint8_t note);
 void posiAPISetSustain(int channelNumber,bool enable);

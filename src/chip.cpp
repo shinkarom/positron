@@ -71,19 +71,3 @@ void chipInterface::setPitchBend(uint16_t value) {
 void chipInterface::releaseAll() {
 	fmsynth_release_all(fmchip);
 }
-
-float chipInterface::fromNormalizedOperatorParameter(uint8_t parameter, float value) {
-	return fmsynth_convert_from_normalized_parameter(fmchip,parameter,value);
-}
-
-float chipInterface::toNormalizedOperatorParameter(uint8_t parameter, float value) {
-	return fmsynth_convert_to_normalized_parameter(fmchip,parameter,value);
-}
-
-float chipInterface::fromNormalizedGlobalParameter(uint8_t parameter, float value) {
-	return fmsynth_convert_from_normalized_global_parameter(fmchip,parameter,value);
-}
-
-float chipInterface::toNormalizedGlobalParameter(uint8_t parameter, float value) {
-	return fmsynth_convert_to_normalized_global_parameter(fmchip,parameter,value);
-}

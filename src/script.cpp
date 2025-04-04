@@ -385,54 +385,6 @@ static int l_posiAPISetPitchBend(lua_State *L) {
   return 0;
 }
 
-// Lua callable C function for posiAPIFromNormalizedOperatorParameter
-static int l_posiAPIFromNormalizedOperatorParameter(lua_State *L) {
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
-    float value = (float)luaL_checknumber(L, 3);
-
-    float result = posiAPIFromNormalizedOperatorParameter(channelNumber, parameter, value);
-
-    lua_pushnumber(L, result);
-    return 1; // Number of return values
-}
-
-// Lua callable C function for posiAPIToNormalizedOperatorParameter
-static int l_posiAPIToNormalizedOperatorParameter(lua_State *L) {
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
-    float value = (float)luaL_checknumber(L, 3);
-
-    float result = posiAPIToNormalizedOperatorParameter(channelNumber, parameter, value);
-
-    lua_pushnumber(L, result);
-    return 1;
-}
-
-// Lua callable C function for posiAPIFromNormalizedGlobalParameter
-static int l_posiAPIFromNormalizedGlobalParameter(lua_State *L) {
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
-    float value = (float)luaL_checknumber(L, 3);
-
-    float result = posiAPIFromNormalizedGlobalParameter(channelNumber, parameter, value);
-
-    lua_pushnumber(L, result);
-    return 1;
-}
-
-// Lua callable C function for posiAPIToNormalizedGlobalParameter
-static int l_posiAPIToNormalizedGlobalParameter(lua_State *L) {
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
-    float value = (float)luaL_checknumber(L, 3);
-
-    float result = posiAPIToNormalizedGlobalParameter(channelNumber, parameter, value);
-
-    lua_pushnumber(L, result);
-    return 1;
-}
-
 static int l_cppPrint(lua_State *L) {
     int nargs = lua_gettop(L); // Number of arguments passed from Lua
     std::string output = "";
@@ -506,11 +458,7 @@ void luaInit() {
 	lua_register(L, "API_drawTilemap", l_posiAPIDrawTilemap);
 	lua_register(L, "API_tilemapEntry", l_posiAPITilemapEntry);
 	lua_register(L, "API_operatorParameter", l_posiAPIOperatorParameter);
-	lua_register(L, "API_convertFromNormalizedOperatorParameter", l_posiAPIFromNormalizedOperatorParameter);
-	lua_register(L, "API_convertToNormalizedOperatorParameter", l_posiAPIToNormalizedOperatorParameter);
 	lua_register(L, "API_globalParameter", l_posiAPIGlobalParameter);
-	lua_register(L, "API_convertFromNormalizedGlobalParameter", l_posiAPIFromNormalizedGlobalParameter);
-	lua_register(L, "API_convertToNormalizedGlobalParameter", l_posiAPIToNormalizedGlobalParameter);
 	lua_register(L, "API_noteOn", l_posiAPINoteOn);
 	lua_register(L, "API_noteOff", l_posiAPINoteOff);
 	lua_register(L, "API_setSustain", l_posiAPISetSustain);

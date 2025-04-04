@@ -13,10 +13,6 @@ class chipInterface {
 		float getOperatorParameter(uint8_t operatorNumber, uint8_t parameter);
 		void setGlobalParameter(uint8_t parameter, float value);
 		float getGlobalParameter(uint8_t parameter);
-		float fromNormalizedOperatorParameter(uint8_t parameter, float value);
-		float toNormalizedOperatorParameter(uint8_t parameter, float value);
-		float fromNormalizedGlobalParameter(uint8_t parameter, float value);
-		float toNormalizedGlobalParameter(uint8_t parameter, float value);
 		void noteOn(uint8_t note, uint8_t velocity);
 		void noteOff(uint8_t note);
 		void setSustain(bool enable);
