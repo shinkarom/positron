@@ -36,21 +36,6 @@ void apuReset() {
 	}
 }
 
-void posiAPITrackPlay(std::string trackName) {
-	auto x = dbLoadByName("track",trackName);
-	if(!x) return;
-	if(chips[0].loadFile((*x))){
-		playing = true;
-		std::cout<<"Loaded file "<<trackName<<std::endl;
-	}
-	
-}
-
-void posiAPITrackStop() {
-	playing = false;
-	apuReset();
-}
-
 void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter,float value) {
 	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
 		return;
@@ -65,6 +50,20 @@ float posiAPIGetOperatorParameter(int channelNumber, uint8_t operatorNumber, uin
 	return chips[channelNumber].getOperatorParameter(operatorNumber, parameter);
 }
 
+float posiAPIFromNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].fromNormalizedOperatorParameter(parameter, value);
+}
+
+float posiAPIToNormalizedOperatorParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].toNormalizedOperatorParameter(parameter, value);
+}
+
 void posiAPISetGlobalParameter(int channelNumber,uint8_t parameter, float value) {
 	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
 		return;
@@ -77,6 +76,20 @@ float posiAPIGetGlobalParameter(int channelNumber,uint8_t parameter) {
 		return 0.0;
 	}
 	return chips[channelNumber].getGlobalParameter(parameter);
+}
+
+float posiAPIFromNormalizedGlobalParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].fromNormalizedGlobalParameter(parameter, value);
+}
+
+float posiAPIToNormalizedGlobalParameter(int channelNumber,uint8_t parameter, float value) {
+	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
+		return 0.0;
+	}
+	return chips[channelNumber].toNormalizedGlobalParameter(parameter, value);
 }
 
 void posiAPINoteOn(int channelNumber,uint8_t note, uint8_t velocity) {

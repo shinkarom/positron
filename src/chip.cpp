@@ -17,10 +17,6 @@ void chipInterface::reset() {
 	fmsynth_reset(fmchip);
 }
 
-bool chipInterface::loadFile(std::vector<uint8_t> file) {
-	return false;
-}
-
 
 void chipInterface::generate(int16_t* buf, int numSamples) {
 	leftBuffer.resize(numSamples);
@@ -74,4 +70,20 @@ void chipInterface::setPitchBend(uint16_t value) {
 
 void chipInterface::releaseAll() {
 	fmsynth_release_all(fmchip);
+}
+
+float chipInterface::fromNormalizedOperatorParameter(uint8_t parameter, float value) {
+	return fmsynth_convert_from_normalized_parameter(fmchip,parameter,value);
+}
+
+float chipInterface::toNormalizedOperatorParameter(uint8_t parameter, float value) {
+	return fmsynth_convert_to_normalized_parameter(fmchip,parameter,value);
+}
+
+float chipInterface::fromNormalizedGlobalParameter(uint8_t parameter, float value) {
+	return fmsynth_convert_from_normalized_global_parameter(fmchip,parameter,value);
+}
+
+float chipInterface::toNormalizedGlobalParameter(uint8_t parameter, float value) {
+	return fmsynth_convert_to_normalized_global_parameter(fmchip,parameter,value);
 }
