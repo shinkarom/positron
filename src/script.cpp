@@ -417,6 +417,32 @@ static int tracebackErrorHandler(lua_State *L) {
     return 1; // Return 1 value: the traceback string (now at top of stack)
 }
 
+// Define the API functions registration table
+static const struct luaL_Reg api_funcs[] = {
+    {"cls", lua_api_cls},
+    {"isPressed", lua_api_isPressed},
+    {"isJustPressed", lua_api_isJustPressed},
+    {"isJustReleased", lua_api_isJustReleased},
+    {"putPixel", lua_api_putPixel},
+    {"drawSprite", lua_api_drawSprite},
+    {"drawTilemap", l_posiAPIDrawTilemap},
+    {"tilemapEntry", l_posiAPITilemapEntry},
+    {"operatorParameter", l_posiAPIOperatorParameter},
+    {"globalParameter", l_posiAPIGlobalParameter},
+    {"noteOn", l_posiAPINoteOn},
+    {"noteOff", l_posiAPINoteOff},
+    {"setSustain", l_posiAPISetSustain},
+    {"setModWheel", l_posiAPISetModWheel},
+    {"setPitchBend", l_posiAPISetPitchBend},
+    {NULL, NULL} // Sentinel value to mark the end of the array
+};
+
+// Function to open the API library
+int luaopen_API(lua_State *L) {
+    luaL_newlib(L, api_funcs);
+    return 1; // Return the number of values pushed onto the stack (the table)
+}
+
 void luaInit() {
     L = luaL_newstate();   // Create a new Lua stat
 	// Create the _MODULE_CACHE table in Lua (global table)
@@ -447,25 +473,14 @@ void luaInit() {
     // 7. Math Library (mathematical functions)
     luaL_requiref(L, LUA_MATHLIBNAME, luaopen_math, 1);
     lua_pop(L, 1); // Pop math library table.
-
-    // Register your C API functions with Lua's global environment
-    lua_register(L, "API_cls", lua_api_cls);
-    lua_register(L, "API_isPressed", lua_api_isPressed);
-    lua_register(L, "API_isJustPressed", lua_api_isJustPressed);
-    lua_register(L, "API_isJustReleased", lua_api_isJustReleased);
-    lua_register(L, "API_putPixel", lua_api_putPixel);
-    lua_register(L, "API_drawSprite", lua_api_drawSprite);
-	lua_register(L, "API_drawTilemap", l_posiAPIDrawTilemap);
-	lua_register(L, "API_tilemapEntry", l_posiAPITilemapEntry);
-	lua_register(L, "API_operatorParameter", l_posiAPIOperatorParameter);
-	lua_register(L, "API_globalParameter", l_posiAPIGlobalParameter);
-	lua_register(L, "API_noteOn", l_posiAPINoteOn);
-	lua_register(L, "API_noteOff", l_posiAPINoteOff);
-	lua_register(L, "API_setSustain", l_posiAPISetSustain);
-	lua_register(L, "API_setModWheel", l_posiAPISetModWheel);
-	lua_register(L, "API_setPitchBend", l_posiAPISetPitchBend);
+	
 	lua_register(L, "require", my_require_cpp);
 	lua_register(L, "print", l_cppPrint);
+	
+	// Register the API table. luaopen_API will be called when 'require "API"' is used.
+    luaL_requiref(L, "API", luaopen_API, 1);
+    lua_pop(L, 1); // Pop the returned table, as we've already set it up
+	
 
     // No need to explicitly get and free a global object in Lua like in QuickJS C API
     // because lua_register directly works with the global environment.
@@ -486,13 +501,17 @@ bool luaCallTick() {
     int isfunc;
 
     // Get the global function "API_Tick"
-    lua_getglobal(L, "API_Tick");
+    //lua_getglobal(L, "API_Tick");
+	
+	lua_getglobal(L, "API");
+    // Get the "Tick" function from the API table
+    lua_getfield(L, -1, "Tick");
 
     // Check if it's a function
     isfunc = lua_isfunction(L, -1);
     if (!isfunc) {
         fprintf(stderr, "Error: API_Tick() is not defined in the Lua script.\n");
-        lua_pop(L, 1); // Pop the non-function value from the stack
+        lua_pop(L, 2); // Pop the non-function value from the stack
         return false;
     }
 
@@ -503,7 +522,8 @@ bool luaCallTick() {
         printLuaError(L); // Call your Lua error printing function
         return false;
     }
-
+	// Pop the "Tick" function (or the non-function value) from the stack
+    lua_pop(L, 1);
     // If lua_pcall returns LUA_OK, the function executed without errors
 
     return true;

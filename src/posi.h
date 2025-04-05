@@ -13,14 +13,14 @@ constexpr auto audioFramesPerTick = audioSampleRate / 60;
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
-constexpr auto numTilePages = 16;
+constexpr auto numTilePages = 64;
 constexpr auto numTiles = tilesPerPage * numTilePages;
 constexpr auto numTilesPixels = pixelsPerPage * numTilePages;
 
 constexpr auto pixelRowSize = 16 * tileSide;
 constexpr auto tileRowSize = pixelRowSize * tileSide;
 
-constexpr auto numTilemaps = 8;
+constexpr auto numTilemaps = 32;
 constexpr auto tilemapWidthScreens = tileSide;
 constexpr auto tilemapHeightScreens = tileSide;
 constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
