@@ -385,30 +385,6 @@ static int l_posiAPISetPitchBend(lua_State *L) {
   return 0;
 }
 
-static int l_cppPrint(lua_State *L) {
-    int nargs = lua_gettop(L); // Number of arguments passed from Lua
-    std::string output = "";
-
-    for (int i = 1; i <= nargs; ++i) {
-        if (lua_isstring(L, i)) {
-            output += lua_tostring(L, i);
-        } else if (lua_isnumber(L, i)) {
-            output += std::to_string(lua_tonumber(L, i));
-        } else if (lua_isboolean(L, i)) {
-            output += lua_toboolean(L, i) ? "true" : "false";
-        } else if (lua_isnil(L, i)) {
-            output += "nil";
-        } else {
-            output += lua_typename(L, lua_type(L, i)); // Type name if not string/number/bool/nil
-        }
-        if (i < nargs) {
-            output += "\t"; // Add a tab separator between arguments, like standard Lua print
-        }
-    }
-    std::cout << output << std::endl; // Print to C++ console (std::cout)
-    return 0; // Number of return values to Lua (none in this case)
-}
-
 // Error handler function to be used with lua_pcall, using luaL_traceback
 static int tracebackErrorHandler(lua_State *L) {
     // 'luaL_traceback' expects the error message to be at the top of the stack (index -1)
@@ -443,47 +419,70 @@ int luaopen_API(lua_State *L) {
     return 1; // Return the number of values pushed onto the stack (the table)
 }
 
+// Function to remove a Lua function (global or within a table),
+// or remove an entire table if functionName is NULL
+int removeLuaFunction(lua_State *L, const char *functionName, const char *tableName) {
+    if (L == NULL) {
+        fprintf(stderr, "Error: Invalid Lua state.\n");
+        return 0; // Indicate failure
+    }
+
+    if (tableName != NULL && strlen(tableName) > 0 && functionName == NULL) {
+        // Remove the entire table
+        lua_pushnil(L);
+        lua_setglobal(L, tableName);
+        return 1; // Indicate success
+    }
+
+    if (functionName == NULL) {
+        fprintf(stderr, "Error: Invalid function name (NULL) for global removal.\n");
+        return 0; // Indicate failure
+    }
+
+    if (tableName == NULL || strlen(tableName) == 0) {
+        // Remove a global function
+        lua_pushnil(L);
+        lua_setglobal(L, functionName);
+        return 1; // Indicate success
+    } else {
+        // Remove a function from a table
+        lua_getglobal(L, tableName);
+        if (lua_istable(L, -1)) {
+            lua_pushnil(L);
+            lua_setfield(L, -2, functionName);
+            lua_pop(L, 1); // Pop the table from the stack
+            return 1; // Indicate success
+        } else {
+            fprintf(stderr, "Error: Table '%s' not found.\n", tableName);
+            lua_pop(L, 1); // Clean up the stack
+            return 0; // Indicate failure
+        }
+    }
+}
+
 void luaInit() {
     L = luaL_newstate();   // Create a new Lua stat
 	// Create the _MODULE_CACHE table in Lua (global table)
     lua_newtable(L);
     lua_setglobal(L, "_MODULE_CACHE");
 
-	luaopen_base(L);
-	// 1. Base Library (basic functions like print, assert, error, etc.)
-   // luaL_requiref(L, "", luaopen_base, 1);
-   // lua_pop(L, 1); // Pop the library table from the stack. It's now in _G.
-
-    // 2. Coroutine Library (coroutines and related functions)
-    luaL_requiref(L, LUA_COLIBNAME, luaopen_coroutine, 1);
-    lua_pop(L, 1); // Pop coroutine library table.
-
-    // 3. Table Library (table manipulation functions)
-    luaL_requiref(L, LUA_TABLIBNAME, luaopen_table, 1);
-    lua_pop(L, 1); // Pop table library table.
-
-	// 3. Table Library (table manipulation functions)
-    luaL_requiref(L, LUA_UTF8LIBNAME, luaopen_utf8, 1);
-    lua_pop(L, 1); // Pop table library table.
-
-    // 6. String Library (string manipulation functions)
-    luaL_requiref(L, LUA_STRLIBNAME, luaopen_string, 1);
-    lua_pop(L, 1); // Pop string library table.
-
-    // 7. Math Library (mathematical functions)
-    luaL_requiref(L, LUA_MATHLIBNAME, luaopen_math, 1);
-    lua_pop(L, 1); // Pop math library table.
+	luaL_openlibs(L);
 	
 	lua_register(L, "require", my_require_cpp);
-	lua_register(L, "print", l_cppPrint);
 	
 	// Register the API table. luaopen_API will be called when 'require "API"' is used.
     luaL_requiref(L, "API", luaopen_API, 1);
     lua_pop(L, 1); // Pop the returned table, as we've already set it up
-	
 
-    // No need to explicitly get and free a global object in Lua like in QuickJS C API
-    // because lua_register directly works with the global environment.
+
+
+	removeLuaFunction(L, "dofile",nullptr);
+	removeLuaFunction(L, "loadfile",nullptr);
+	removeLuaFunction(L, "debug","debug");
+	removeLuaFunction(L, nullptr, "package");
+	removeLuaFunction(L, nullptr, "io");
+	removeLuaFunction(L, nullptr, "file");
+	removeLuaFunction(L, nullptr, "os");
 	
 	lua_pushcfunction(L, tracebackErrorHandler);
     error_handler_index = lua_gettop(L); // Get the index of the error handler
@@ -505,12 +504,12 @@ bool luaCallTick() {
 	
 	lua_getglobal(L, "API");
     // Get the "Tick" function from the API table
-    lua_getfield(L, -1, "Tick");
+    lua_getfield(L, -1, "tick");
 
     // Check if it's a function
     isfunc = lua_isfunction(L, -1);
     if (!isfunc) {
-        fprintf(stderr, "Error: API_Tick() is not defined in the Lua script.\n");
+        fprintf(stderr, "Error: API.tick() is not defined in the Lua script.\n");
         lua_pop(L, 2); // Pop the non-function value from the stack
         return false;
     }
