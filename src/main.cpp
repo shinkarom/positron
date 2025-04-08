@@ -24,6 +24,7 @@ SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
 bool hasFullscreen;
+bool isPaused;
 
 void destroyPosiSDL() {
 	posiPoweroff();
@@ -90,6 +91,7 @@ int main(int argc, char *argv[])
 	posiPoweron();
 	
 	hasFullscreen = false;
+	isPaused = false;
 	
 	int16_t* audioBuffer;
 	audioBuffer = posiAudiofeed();
@@ -125,6 +127,10 @@ int main(int argc, char *argv[])
 			} else if (event.type == SDL_EVENT_KEY_DOWN) {
 				
 			} else if (event.type == SDL_EVENT_KEY_UP) {
+				if(event.key.scancode == SDL_SCANCODE_F11){
+					isPaused = !isPaused;
+					if(isPaused) apuClearBuffer();
+				}
 				if((event.key.scancode == SDL_SCANCODE_F12)||(hasFullscreen&&event.key.scancode == SDL_SCANCODE_ESCAPE)) {
 					hasFullscreen = !hasFullscreen;
 					SDL_SetWindowFullscreen(window,hasFullscreen);
@@ -137,11 +143,17 @@ int main(int argc, char *argv[])
 				winRect = calcRect(texRect);
 			}
 		}
-		 auto kbState = SDL_GetKeyboardState(nullptr);
-		for (int i = 0; i < numInputButtons; i++) {
-			posiUpdateButton(i, kbState[inputScancodes[i]]);
-		 }
+		if(!isPaused) {
+			auto kbState = SDL_GetKeyboardState(nullptr);
+			for (int i = 0; i < numInputButtons; i++) {
+				posiUpdateButton(i, kbState[inputScancodes[i]]);
+			 }
+		}
 		 
+		 
+		 if(isPaused) {
+			 
+		 } else
 		 if(!posiRun()) {
 			 done = true;
 		 }

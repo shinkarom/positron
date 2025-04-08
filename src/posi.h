@@ -65,6 +65,7 @@ uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
 void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry);
 
 void apuInit();
+void apuClearBuffer();
 void apuProcess();
 void apuReset();
 bool apuLoadFile(std::vector<uint8_t>& file);

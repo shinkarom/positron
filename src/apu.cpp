@@ -18,19 +18,21 @@ void apuInit() {
 	apuReset();
 }
 
-void apuProcess() {
+void apuClearBuffer() {
 	for(int i = 0; i < audioFramesPerTick*2; i++) {
 		soundBuffer[i] = 0;
 	}
+}
+
+void apuProcess() {
+	apuClearBuffer();
 	for(int i = 0; i<numAudioChannels; i++) {
 		chips[i].generate(soundBuffer.data(),audioFramesPerTick);
 	}
 }
 
 void apuReset() {
-	for(int i = 0; i < audioFramesPerTick*2; i++) {
-		soundBuffer[i] = 0;
-	}
+	apuClearBuffer();
 	for(int i = 0; i<numAudioChannels; i++) {
 		chips[i].reset();
 	}
