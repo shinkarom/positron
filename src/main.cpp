@@ -23,6 +23,8 @@ constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=44
 SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
+bool hasFullscreen;
+
 void destroyPosiSDL() {
 	posiPoweroff();
 	
@@ -87,6 +89,8 @@ int main(int argc, char *argv[])
 	
 	posiPoweron();
 	
+	hasFullscreen = false;
+	
 	int16_t* audioBuffer;
 	audioBuffer = posiAudiofeed();
 	auto fileName = program.get<std::string>("file");
@@ -121,7 +125,10 @@ int main(int argc, char *argv[])
 			} else if (event.type == SDL_EVENT_KEY_DOWN) {
 				
 			} else if (event.type == SDL_EVENT_KEY_UP) {
-				
+				if((event.key.scancode == SDL_SCANCODE_F12)||(hasFullscreen&&event.key.scancode == SDL_SCANCODE_ESCAPE)) {
+					hasFullscreen = !hasFullscreen;
+					SDL_SetWindowFullscreen(window,hasFullscreen);
+				}
 			} else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
 				texRect.x = 0;
 				texRect.y = 0;
