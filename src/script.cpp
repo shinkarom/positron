@@ -474,8 +474,6 @@ void luaInit() {
     luaL_requiref(L, "API", luaopen_API, 1);
     lua_pop(L, 1); // Pop the returned table, as we've already set it up
 
-
-
 	removeLuaFunction(L, "dofile",nullptr);
 	removeLuaFunction(L, "loadfile",nullptr);
 	removeLuaFunction(L, "debug","debug");
@@ -488,11 +486,32 @@ void luaInit() {
     error_handler_index = lua_gettop(L); // Get the index of the error handler
 }
 
+bool luaLoad() {
+	auto retrieved_data = dbLoadByName("code", "main");
+	if(!retrieved_data) {
+		std::cout<<"Error: Could not load main script."<<std::endl;
+		return false;
+	}
+	auto retrieved_code = std::string((*retrieved_data).begin(), (*retrieved_data).end());
+
+	if(!luaEvalMain(retrieved_code)){
+		return false;
+	}
+	
+	return true;
+}
+
 void luaDeinit() {
     if (L) {
         lua_close(L); // Close the Lua state, releasing resources
         L = NULL;      // Good practice to set the global state pointer to NULL
     }
+}
+
+bool luaReset() {
+	luaDeinit();
+	luaInit();
+	return luaLoad();	
 }
 
 bool luaCallTick() {

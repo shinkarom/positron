@@ -4,14 +4,17 @@
 #include <iostream>
 #include <cstring>
 #include <cmath>
+#include <string>
 
 int gameState;
+std::string loadedFileName;
 
 void posiPoweron() {	
 	luaInit();
 	gpuInit();
 	apuInit();
 	gameState = POSI_STATE_GAME;
+	loadedFileName = "";
 }
 
 void posiPoweroff() {
@@ -30,27 +33,21 @@ bool posiRun() {
 	}
 }
 
-
-
 bool posiLoad(std::string fileName) {
+	dbDisconnect();
 	if(!dbTryConnect(fileName)) {
 		return false;
 	}
-	
+	loadedFileName = fileName;
 	gpuLoad();
 	
-	auto retrieved_data = dbLoadByName("code", "main");
-	if(!retrieved_data) {
-		std::cout<<"Error: Could not load main script."<<std::endl;
-		return false;
-	}
-	auto retrieved_code = std::string((*retrieved_data).begin(), (*retrieved_data).end());
+	return luaLoad();
+}
 
-	if(!luaEvalMain(retrieved_code)){
-		return false;
-	}
-	
-	return true;
+bool posiReset() {
+	apuReset();
+	gpuReset();
+	return luaReset();
 }
 
 void posiChangeState(int newState) {

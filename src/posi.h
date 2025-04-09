@@ -40,8 +40,10 @@ bool dbTryConnect(std::string fileName);
 void dbDisconnect();
 
 void luaInit();
+bool luaLoad();
 void luaDeinit();
 bool luaCallTick();
+bool luaReset();
 bool luaEvalMain(std::string code);
 
 enum PosiState {POSI_STATE_GAME};
@@ -50,11 +52,14 @@ void posiPoweron();
 void posiPoweroff();
 bool posiRun();
 bool posiLoad(std::string fileName);
+bool posiReset();
 int16_t* posiAudiofeed();
 void posiChangeState(int newState);
 
 void gpuInit();
 void gpuLoad();
+void gpuClear();
+void gpuReset();
 void posiRedraw(uint32_t* buffer);
 void posiPutPixel(int x, int y, uint32_t color);
 void posiAPICls(uint32_t color);

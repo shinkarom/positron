@@ -7,7 +7,6 @@
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
-std::array<uint32_t, (1<<16)> palette;
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
@@ -34,7 +33,7 @@ void posiRedraw(uint32_t* buffer) {
 }
 
 void gpuInit() {
-    
+    gpuClear();
 }
 
 void loadTilePages() {
@@ -68,6 +67,19 @@ void loadTilemaps() {
 		if(!x || x->size() != tilemapTotalBytes) continue;
 		memcpy(tilemaps[i].data(), x->data(), tilemapTotalBytes);
 	}
+}
+
+void gpuClear() {
+	frameBuffer.fill(0);
+	tiles.fill(0);
+	for(int j = 0; j < numTilemaps; j++) {
+		tilemaps[j].fill(0);
+	}
+}
+
+void gpuReset() {
+	gpuClear();
+	gpuLoad();
 }
 
 void gpuLoad() {

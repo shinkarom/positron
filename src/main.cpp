@@ -19,7 +19,7 @@ SDL_Event event;
 constexpr auto msPerTick = 1000 / 60;
 uint64_t targetTime;
 
-constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=44100};
+constexpr SDL_AudioSpec spec = {.format = SDL_AUDIO_S16LE, .channels=2, .freq=audioSampleRate};
 SDL_AudioDeviceID audioID;
 SDL_AudioStream* stream;
 
@@ -127,6 +127,11 @@ int main(int argc, char *argv[])
 			} else if (event.type == SDL_EVENT_KEY_DOWN) {
 				
 			} else if (event.type == SDL_EVENT_KEY_UP) {
+				if(event.key.scancode == SDL_SCANCODE_F10) {
+					if(!posiReset()){
+						done = true;
+					}
+				}
 				if(event.key.scancode == SDL_SCANCODE_F11){
 					isPaused = !isPaused;
 					if(isPaused) apuClearBuffer();
