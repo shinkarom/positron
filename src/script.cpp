@@ -208,6 +208,64 @@ static int lua_api_pixel(lua_State *L) {
     }
 }
 
+// Lua C function for the posiAPITilePagePixel pair
+static int l_posiAPITilePagePixel(lua_State *L) {
+  int n = lua_gettop(L);
+
+  if (n == 3) {
+    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3)) {
+      return luaL_error(L, "Expected three integer arguments for posiAPITilePagePixel (get)");
+    }
+    int pageNum = lua_tointeger(L, 1);
+    int x = lua_tointeger(L, 2);
+    int y = lua_tointeger(L, 3);
+    uint32_t result = posiAPIGetTilePagePixel(pageNum, x, y);
+    lua_pushinteger(L, result);
+    return 1;
+  } else if (n == 4) {
+    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
+      return luaL_error(L, "Expected four integer arguments for posiAPITilePagePixel (set)");
+    }
+    int pageNum = lua_tointeger(L, 1);
+    int x = lua_tointeger(L, 2);
+    int y = lua_tointeger(L, 3);
+    uint32_t color = lua_tointeger(L, 4);
+    posiAPISetTilePagePixel(pageNum, x, y, color);
+    return 0;
+  } else {
+    return luaL_error(L, "Wrong number of arguments for posiAPITilePagePixel. Expected 3 (get) or 4 (set), got %d", n);
+  }
+}
+
+// Lua C function for the posiAPITilePixel pair
+static int l_posiAPITilePixel(lua_State *L) {
+  int n = lua_gettop(L);
+
+  if (n == 3) {
+    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3)) {
+      return luaL_error(L, "Expected three integer arguments for posiAPITilePixel (get)");
+    }
+    int tileNum = lua_tointeger(L, 1);
+    int x = lua_tointeger(L, 2);
+    int y = lua_tointeger(L, 3);
+    uint32_t result = posiAPIGetTilePixel(tileNum, x, y);
+    lua_pushinteger(L, result);
+    return 1;
+  } else if (n == 4) {
+    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
+      return luaL_error(L, "Expected four integer arguments for posiAPITilePixel (set)");
+    }
+    int tileNum = lua_tointeger(L, 1);
+    int x = lua_tointeger(L, 2);
+    int y = lua_tointeger(L, 3);
+    uint32_t color = lua_tointeger(L, 4);
+    posiAPISetTilePixel(tileNum, x, y, color);
+    return 0;
+  } else {
+    return luaL_error(L, "Wrong number of arguments for posiAPITilePixel. Expected 3 (get) or 4 (set), got %d", n);
+  }
+}
+
 static int lua_api_drawSprite(lua_State *L) {
     lua_Integer id, w, h, x, y;
     bool flipHorz, flipVert;
@@ -411,6 +469,8 @@ static const struct luaL_Reg api_funcs[] = {
     {"isJustPressed", lua_api_isJustPressed},
     {"isJustReleased", lua_api_isJustReleased},
     {"pixel", lua_api_pixel},
+	{"tilePagePixel",l_posiAPITilePagePixel},
+	{"tilePixel",l_posiAPITilePixel},
     {"drawSprite", lua_api_drawSprite},
     {"drawTilemap", l_posiAPIDrawTilemap},
     {"tilemapEntry", l_posiAPITilemapEntry},

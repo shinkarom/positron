@@ -10,6 +10,7 @@ constexpr auto screenHeight = 224;
 constexpr auto audioSampleRate = 44100;
 constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
+constexpr auto pixelSizeBytes = 4;
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
@@ -65,6 +66,10 @@ void posiPutPixel(int x, int y, uint32_t color);
 void posiAPICls(uint32_t color);
 uint32_t posiAPIGetPixel(int x, int y);
 void posiAPIPutPixel(int x, int y, uint32_t color);
+uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y);
+void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color);
+uint32_t posiAPIGetTilePixel(int tileNum, int x, int y);
+void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
 uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);

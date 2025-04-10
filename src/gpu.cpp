@@ -35,6 +35,53 @@ void posiAPIPutPixel(int x, int y, uint32_t color) {
 	posiPutPixel(x, y, color);
 }
 
+uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y) {
+	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
+		return 0xFF000000;
+	}
+	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
+	auto pxAddress = pageStart + (pixelRowSize * y) +x;
+	return tiles[pxAddress];
+}
+
+void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
+	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
+		return;
+	}
+	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
+	auto pxAddress = pageStart + (pixelRowSize * y) +x;
+	tiles[pxAddress] = color | 0xFF000000;
+}
+
+uint32_t posiAPIGetTilePixel(int tileNum, int x, int y) {
+	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
+		return 0xFF000000;
+	}
+	auto pageNum = tileNum / tilesPerPage;
+	auto idRemainder = tileNum % tilesPerPage;
+	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
+	auto tileRow = idRemainder / 16;
+	auto tileColumn = idRemainder % 16;
+	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
+	auto pxAddr = tileStart + (y * pixelRowSize) + x;
+	return tiles[pxAddr];
+	
+}
+
+void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
+	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
+		return;
+	}
+	auto pageNum = tileNum / tilesPerPage;
+	auto idRemainder = tileNum % tilesPerPage;
+	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
+	auto tileRow = idRemainder / 16;
+	auto tileColumn = idRemainder % 16;
+	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
+	auto pxAddr = tileStart + (y * pixelRowSize) + x;
+	tiles[pxAddr] = color | 0xFf000000;;
+}
+
 void posiRedraw(uint32_t* buffer) {	
 	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
 }
@@ -47,7 +94,7 @@ void loadTilePages() {
 	bool hasMask = false;
 	for(auto i = 0; i< numTilePages; i++) {
 		auto x = dbLoadByNumber("tiles", i);
-		if(!x || x->size() != pixelsPerPage*4) continue;
+		if(!x || x->size() != pixelsPerPage*pixelSizeBytes) continue;
 		auto y = dbLoadByNumber("mask", i);
 		if(y && y->size() == pixelsPerPage) {
 			hasMask = true;
