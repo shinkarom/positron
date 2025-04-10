@@ -63,6 +63,7 @@ void gpuReset();
 void posiRedraw(uint32_t* buffer);
 void posiPutPixel(int x, int y, uint32_t color);
 void posiAPICls(uint32_t color);
+uint32_t posiAPIGetPixel(int x, int y);
 void posiAPIPutPixel(int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);

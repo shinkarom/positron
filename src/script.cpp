@@ -176,25 +176,36 @@ static int lua_api_isJustReleased(lua_State *L) {
     return 1;
 }
 
-static int lua_api_putPixel(lua_State *L) {
+static int lua_api_pixel(lua_State *L) {
+    int num_args = lua_gettop(L);
     lua_Integer x, y;
     lua_Unsigned color; // Use lua_Unsigned for uint32_t (color)
 
-    if (lua_gettop(L) != 3) {
-        return luaL_error(L, "API_putPixel expects 3 arguments: x, y, color.");
+    if (num_args == 3) {
+        if (!lua_isnumber(L, 1)) return luaL_argerror(L, 1, "x must be a number");
+        if (!lua_isnumber(L, 2)) return luaL_argerror(L, 2, "y must be a number");
+        if (!lua_isnumber(L, 3)) return luaL_argerror(L, 3, "color must be a number");
+
+        x = luaL_checkinteger(L, 1);
+        y = luaL_checkinteger(L, 2);
+        color = (lua_Unsigned)luaL_checkinteger(L, 3); // Use luaL_checkunsigned for uint32_t
+
+        posiAPIPutPixel((int32_t)x, (int32_t)y, (uint32_t)color); // Call native C function
+
+        return 0; // No return value to Lua
+    } else if (num_args == 2) {
+        if (!lua_isnumber(L, 1)) return luaL_argerror(L, 1, "x must be a number");
+        if (!lua_isnumber(L, 2)) return luaL_argerror(L, 2, "y must be a number");
+
+        x = luaL_checkinteger(L, 1);
+        y = luaL_checkinteger(L, 2);
+
+        uint32_t retrieved_color = posiAPIGetPixel((int32_t)x, (int32_t)y);
+        lua_pushinteger(L, (lua_Integer)retrieved_color); // Push the color value onto the Lua stack
+        return 1; // Return one value to Lua
+    } else {
+        return luaL_error(L, "API_putPixel expects 2 or 3 arguments: x, y, [color].");
     }
-
-    if (!lua_isnumber(L, 1)) return luaL_argerror(L, 1, "x must be a number");
-    if (!lua_isnumber(L, 2)) return luaL_argerror(L, 2, "y must be a number");
-    if (!lua_isnumber(L, 3)) return luaL_argerror(L, 3, "color must be a number");
-
-    x = luaL_checkinteger(L, 1);
-    y = luaL_checkinteger(L, 2);
-    color = (lua_Unsigned)luaL_checkinteger(L, 3); // Use luaL_checkunsigned for uint32_t
-
-    posiAPIPutPixel((int32_t)x, (int32_t)y, (uint32_t)color); // Call native C function
-
-    return 0; // No return value to Lua
 }
 
 static int lua_api_drawSprite(lua_State *L) {
@@ -399,7 +410,7 @@ static const struct luaL_Reg api_funcs[] = {
     {"isPressed", lua_api_isPressed},
     {"isJustPressed", lua_api_isJustPressed},
     {"isJustReleased", lua_api_isJustReleased},
-    {"putPixel", lua_api_putPixel},
+    {"pixel", lua_api_pixel},
     {"drawSprite", lua_api_drawSprite},
     {"drawTilemap", l_posiAPIDrawTilemap},
     {"tilemapEntry", l_posiAPITilemapEntry},

@@ -24,6 +24,13 @@ void posiAPICls(uint32_t color) {
 	}
 }
 
+uint32_t posiAPIGetPixel(int x, int y) {
+	if(x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
+		return 0xFF000000;
+	}
+	return frameBuffer[y*screenWidth+x];
+}
+
 void posiAPIPutPixel(int x, int y, uint32_t color) {
 	posiPutPixel(x, y, color);
 }
