@@ -321,23 +321,25 @@ static int l_posiAPITilemapEntry(lua_State *L) {
     int tmx = luaL_checkinteger(L, 2);
     int tmy = luaL_checkinteger(L, 3);
 
-    uint16_t result = posiAPIGetTilemapEntry(tilemapNum, tmx, tmy);
-    lua_pushinteger(L, (lua_Integer)result);
-    return 1; // Return 1 value (the tilemap entry)
+    auto result = posiAPIGetTilemapEntry(tilemapNum, tmx, tmy);
+    lua_pushinteger(L, (lua_Integer)std::get<0>(result));
+	lua_pushinteger(L, (lua_Integer)std::get<1>(result));
+    return 2; // Return 1 value (the tilemap entry)
 
-  } else if (num_args == 4) {
-    // Assume it's a call to posiAPISetTilemapEntry (4 arguments: tilemapNum, tmx, tmy, entry)
+  } else if (num_args == 5) {
+    
     int tilemapNum = luaL_checkinteger(L, 1);
     int tmx = luaL_checkinteger(L, 2);
     int tmy = luaL_checkinteger(L, 3);
     uint16_t entry = (uint16_t)luaL_checkinteger(L, 4);
+	uint8_t attributes = (uint8_t)luaL_checkinteger(L, 5);
 
-    posiAPISetTilemapEntry(tilemapNum, tmx, tmy, entry);
+    posiAPISetTilemapEntry(tilemapNum, tmx, tmy, entry, attributes);
     return 0; // Return no value (void function)
 
   } else {
     // Incorrect number of arguments
-    return luaL_error(L, "API_tilemapEntry: Incorrect number of arguments. Expected 3 (get) or 4 (set).");
+    return luaL_error(L, "API_tilemapEntry: Incorrect number of arguments.");
   }
 }
 

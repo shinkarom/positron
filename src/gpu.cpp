@@ -3,6 +3,7 @@
 #include <iostream>
 #include <cstring>
 #include <array>
+#include <utility>
 
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
@@ -171,17 +172,19 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	}
 }
 
-uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy) {
+std::tuple<uint16_t, uint8_t> posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy) {
 	if(tilemapNum < 0 ||tilemapNum >= numTilemaps||tmx<0||tmx>=tilemapTotalWidthTiles||tmy <0 || tmy >= tilemapTotalHeightTiles)
-		return 0;
+		return {0, 0};
 	auto r = tilemaps[tilemapNum][tmy*tilemapTotalWidthTiles+tmx];
-	return r;
+	auto a = tilemapAttributes[tilemapNum][tmy*tilemapTotalWidthTiles+tmx];
+	return {r, a};
 }
 
-void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry){
+void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry, uint8_t attributes){
 	if(tilemapNum < 0 ||tilemapNum >= numTilemaps||tmx<0||tmx>=tilemapTotalWidthTiles||tmy <0 || tmy >= tilemapTotalHeightTiles)
 		return;
 	tilemaps[tilemapNum][tmy*tilemapTotalWidthTiles+tmx] = entry;
+	tilemapAttributes[tilemapNum][tmy*tilemapTotalWidthTiles+tmx] = attributes;
 }
 
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y) {
@@ -214,25 +217,18 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			
 			auto attribute = tilemapAttributes[tilemapNum][tileAddr];
 			
-			if(attribute & 0x1) {
-				auto temp = tmPixelX;
-				tmPixelX = tmPixelY;
-				tmPixelY = temp;
-			}
-			
-			//if(tileNum & 0x8000) {
-			if(attribute & 0x4) {
+			if(attribute & 0x2) {
 				tmPixelX = tileSide - 1 - tmPixelX;
 			}
-			//if(tileNum & 0x4000) {
-			if(attribute & 0x2) {
+
+			if(attribute & 0x1) {
 				tmPixelY = tileSide - 1  - tmPixelY;
 			}
 			auto pageNum = tileNum / tilesPerPage;
 			auto idRemainder = tileNum % tilesPerPage;
 			auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-			auto tileRow = idRemainder / 16;
-			auto tileColumn = idRemainder % 16;
+			auto tileRow = idRemainder >> 4;
+			auto tileColumn = idRemainder & 15;
 			auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
 			auto pixelPos = tileStart + tmPixelY*pixelRowSize+tmPixelX;
 			auto color = tiles[pixelPos];

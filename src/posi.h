@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include <tuple>
 
 constexpr auto screenWidth = 224;
 constexpr auto screenHeight = 224;
@@ -72,8 +73,8 @@ uint32_t posiAPIGetTilePixel(int tileNum, int x, int y);
 void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
-uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
-void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry);
+std::tuple<uint16_t, uint8_t> posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
+void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy, uint16_t entry, uint8_t attributes);
 
 void apuInit();
 void apuClearBuffer();
