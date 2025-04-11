@@ -7,6 +7,7 @@
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
+std::array<uint8_t, tilemapTotalTiles> tilemapAttributes[numTilemaps];
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
@@ -120,6 +121,10 @@ void loadTilemaps() {
 		auto x = dbLoadByNumber("tilemap", i);
 		if(!x || x->size() != tilemapTotalBytes) continue;
 		memcpy(tilemaps[i].data(), x->data(), tilemapTotalBytes);
+		auto y = dbLoadByNumber("attribute", i);
+		if(y && y->size() == tilemapTotalTiles) {
+			memcpy(tilemapAttributes[i].data(), y->data(), tilemapTotalTiles);
+		}
 	}
 }
 
@@ -128,6 +133,7 @@ void gpuClear() {
 	tiles.fill(0);
 	for(int j = 0; j < numTilemaps; j++) {
 		tilemaps[j].fill(0);
+		tilemapAttributes[j].fill(0);
 	}
 }
 
@@ -197,23 +203,33 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tmTileY = tmyy / tileSide;
 			auto tmPixelX = tmxx % tileSide;
 			auto tmPixelY = tmyy % tileSide;
-			auto tileNum = tilemaps[tilemapNum][tmTileY*tilemapTotalWidthTiles+tmTileX];
-			auto realTileNum = tileNum & 0x3FFF;
-			if(realTileNum >= numTiles) {
+			auto tileAddr = tmTileY*tilemapTotalWidthTiles+tmTileX;
+			auto tileNum = tilemaps[tilemapNum][tileAddr];
+			if(tileNum >= numTiles) {
 				continue;
 			}
 			//if(tileNum != 0) {
 			//	std::cout<<tmTileX<<" "<<tmTileY<<" "<<tileNum<<" "<<realTileNum<<std::endl;
 			//}
 			
-			if(tileNum & 0x8000) {
+			auto attribute = tilemapAttributes[tilemapNum][tileAddr];
+			
+			if(attribute & 0x1) {
+				auto temp = tmPixelX;
+				tmPixelX = tmPixelY;
+				tmPixelY = temp;
+			}
+			
+			//if(tileNum & 0x8000) {
+			if(attribute & 0x4) {
 				tmPixelX = tileSide - 1 - tmPixelX;
 			}
-			if(tileNum & 0x4000) {
+			//if(tileNum & 0x4000) {
+			if(attribute & 0x2) {
 				tmPixelY = tileSide - 1  - tmPixelY;
 			}
-			auto pageNum = realTileNum / tilesPerPage;
-			auto idRemainder = realTileNum % tilesPerPage;
+			auto pageNum = tileNum / tilesPerPage;
+			auto idRemainder = tileNum % tilesPerPage;
 			auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
 			auto tileRow = idRemainder / 16;
 			auto tileColumn = idRemainder % 16;

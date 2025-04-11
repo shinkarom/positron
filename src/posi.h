@@ -14,7 +14,7 @@ constexpr auto pixelSizeBytes = 4;
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
-constexpr auto numTilePages = 64;
+constexpr auto numTilePages = 256;
 constexpr auto numTiles = tilesPerPage * numTilePages;
 constexpr auto numTilesPixels = pixelsPerPage * numTilePages;
 
