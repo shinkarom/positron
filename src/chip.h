@@ -8,7 +8,7 @@ class chipInterface {
 	public:
 		chipInterface(int sampleRate = audioSampleRate);
 		~chipInterface();
-		void generate(int16_t* buf, int numSamples = 1);
+		void generate(std::array<float, audioFramesPerTick> &lbuf, std::array<float, audioFramesPerTick> &rbuf);
 		void setOperatorParameter(uint8_t operatorNumber, uint8_t parameter,float value);
 		float getOperatorParameter(uint8_t operatorNumber, uint8_t parameter);
 		void setGlobalParameter(uint8_t parameter, float value);
@@ -22,6 +22,5 @@ class chipInterface {
 		void reset();
 	private:
 		fmsynth* fmchip;
-		std::vector<float> leftBuffer, rightBuffer;
 		int sampleRate;
 };

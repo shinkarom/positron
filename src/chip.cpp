@@ -18,18 +18,8 @@ void chipInterface::reset() {
 }
 
 
-void chipInterface::generate(int16_t* buf, int numSamples) {
-	leftBuffer.resize(numSamples);
-	rightBuffer.resize(numSamples);
-	for(auto i = 0; i<numSamples; i++) {
-		leftBuffer[i] = int16ToFloat(buf[i*2]);
-		rightBuffer[i] = int16ToFloat(buf[i*2+1]);
-	}
-	fmsynth_render(fmchip, leftBuffer.data(),rightBuffer.data(), numSamples);
-	for(auto i = 0; i < numSamples; i++) {
-		buf[i*2] = floatToInt16(leftBuffer[i]);
-		buf[i*2+1] = floatToInt16(rightBuffer[i]);
-	}
+void chipInterface::generate(std::array<float, audioFramesPerTick> &lbuf, std::array<float, audioFramesPerTick> &rbuf) {
+	fmsynth_render(fmchip, lbuf.data(),rbuf.data(), audioFramesPerTick);
 }
 
 void chipInterface::setOperatorParameter(uint8_t operatorNumber, uint8_t parameter,float value) {

@@ -7,6 +7,7 @@
 
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 chipInterface chips[numAudioChannels];
+std::array<float, audioFramesPerTick> leftBuffer, rightBuffer;
 
 bool playing = false;
 
@@ -19,15 +20,19 @@ void apuInit() {
 }
 
 void apuClearBuffer() {
-	for(int i = 0; i < audioFramesPerTick*2; i++) {
-		soundBuffer[i] = 0;
-	}
+	soundBuffer.fill(0);
+	leftBuffer.fill(0);
+	rightBuffer.fill(0);
 }
 
 void apuProcess() {
 	apuClearBuffer();
 	for(int i = 0; i<numAudioChannels; i++) {
-		chips[i].generate(soundBuffer.data(),audioFramesPerTick);
+		chips[i].generate(leftBuffer,rightBuffer);
+	}
+	for(auto i = 0; i < audioFramesPerTick; i++) {
+		soundBuffer[i*2] = floatToInt16(leftBuffer[i]);
+		soundBuffer[i*2+1] = floatToInt16(rightBuffer[i]);
 	}
 }
 
