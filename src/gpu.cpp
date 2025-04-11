@@ -9,6 +9,17 @@ std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
 std::array<uint8_t, tilemapTotalTiles> tilemapAttributes[numTilemaps];
+std::array<uint32_t, numColors> palette;
+
+void buildPalette(){
+	for(auto i = 0; i < numColors; i++){
+		auto r = i&0b11100000;
+		auto g = (i&0b00011100)<<3;
+		auto b = (i & 0b00000011)<<6;
+		uint32_t result = 0xFF000000 | (r << 16) | (g << 8) | b;
+		palette[i] = result;
+	}
+}
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
@@ -81,7 +92,7 @@ void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
 	auto tileColumn = idRemainder % 16;
 	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
 	auto pxAddr = tileStart + (y * pixelRowSize) + x;
-	tiles[pxAddr] = color | 0xFf000000;;
+	tiles[pxAddr] = color | 0xFF000000;;
 }
 
 void posiRedraw(uint32_t* buffer) {	
@@ -89,6 +100,7 @@ void posiRedraw(uint32_t* buffer) {
 }
 
 void gpuInit() {
+	buildPalette();
     gpuClear();
 }
 
@@ -104,13 +116,12 @@ void loadTilePages() {
 		auto outputStart = tiles.data() + i * (pixelsPerPage);
 		uint32_t* dest = (uint32_t*)outputStart;
 		uint8_t* mask = (uint8_t*)(y->data());
-		const uint32_t* src = reinterpret_cast<const uint32_t*>((*x).data());
 		for (size_t i = 0; i < pixelsPerPage; i++) {
-			uint32_t pixel = src[i]; 
+			uint32_t pixel; 
 			if(hasMask && mask[i] == 0) {
 				pixel = 0x00000000;
 			} else {
-				pixel |= 0xFF000000;
+				pixel = palette[(*x)[i]];
 			}
 			*dest++ = pixel;
 		}	
