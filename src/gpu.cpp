@@ -8,18 +8,7 @@
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
-std::array<uint8_t, tilemapTotalTiles> tilemapAttributes[numTilemaps];
 std::array<uint32_t, numColors> palette;
-
-void buildPalette(){
-	for(auto i = 0; i < numColors; i++){
-		auto r = i&0b11100000;
-		auto g = (i&0b00011100)<<3;
-		auto b = (i & 0b00000011)<<6;
-		uint32_t result = 0xFF000000 | (r << 16) | (g << 8) | b;
-		palette[i] = result;
-	}
-}
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
@@ -100,7 +89,6 @@ void posiRedraw(uint32_t* buffer) {
 }
 
 void gpuInit() {
-	buildPalette();
     gpuClear();
 }
 
@@ -134,10 +122,6 @@ void loadTilemaps() {
 		auto x = dbLoadByNumber("tilemap", i);
 		if(!x || x->size() != tilemapTotalBytes) continue;
 		memcpy(tilemaps[i].data(), x->data(), tilemapTotalBytes);
-		auto y = dbLoadByNumber("attribute", i);
-		if(y && y->size() == tilemapTotalTiles) {
-			memcpy(tilemapAttributes[i].data(), y->data(), tilemapTotalTiles);
-		}
 	}
 }
 
@@ -146,7 +130,6 @@ void gpuClear() {
 	tiles.fill(0);
 	for(int j = 0; j < numTilemaps; j++) {
 		tilemaps[j].fill(0);
-		tilemapAttributes[j].fill(0);
 	}
 }
 
@@ -184,19 +167,17 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	}
 }
 
-std::tuple<uint16_t, uint8_t> posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy) {
+uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy) {
 	if(tilemapNum < 0 ||tilemapNum >= numTilemaps||tmx<0||tmx>=tilemapTotalWidthTiles||tmy <0 || tmy >= tilemapTotalHeightTiles)
-		return {0, 0};
+		return 0;
 	auto r = tilemaps[tilemapNum][tmy*tilemapTotalWidthTiles+tmx];
-	auto a = tilemapAttributes[tilemapNum][tmy*tilemapTotalWidthTiles+tmx];
-	return {r, a};
+	return r;
 }
 
-void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry, uint8_t attributes){
+void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry){
 	if(tilemapNum < 0 ||tilemapNum >= numTilemaps||tmx<0||tmx>=tilemapTotalWidthTiles||tmy <0 || tmy >= tilemapTotalHeightTiles)
 		return;
 	tilemaps[tilemapNum][tmy*tilemapTotalWidthTiles+tmx] = entry;
-	tilemapAttributes[tilemapNum][tmy*tilemapTotalWidthTiles+tmx] = attributes;
 }
 
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y) {
@@ -220,24 +201,23 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto tmPixelY = tmyy % tileSide;
 			auto tileAddr = tmTileY*tilemapTotalWidthTiles+tmTileX;
 			auto tileNum = tilemaps[tilemapNum][tileAddr];
-			if(tileNum >= numTiles) {
+			auto realTileNum = tileNum & 0x3FFF;
+			if(realTileNum >= numTiles) {
 				continue;
 			}
 			//if(tileNum != 0) {
 			//	std::cout<<tmTileX<<" "<<tmTileY<<" "<<tileNum<<" "<<realTileNum<<std::endl;
 			//}
 			
-			auto attribute = tilemapAttributes[tilemapNum][tileAddr];
-			
-			if(attribute & 0x2) {
+			if(tileNum & 0x8000) {
 				tmPixelX = tileSide - 1 - tmPixelX;
 			}
 
-			if(attribute & 0x1) {
+			if(tileNum & 0x4000) {
 				tmPixelY = tileSide - 1  - tmPixelY;
 			}
-			auto pageNum = tileNum / tilesPerPage;
-			auto idRemainder = tileNum % tilesPerPage;
+			auto pageNum = realTileNum / tilesPerPage;
+			auto idRemainder = realTileNum % tilesPerPage;
 			auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
 			auto tileRow = idRemainder >> 4;
 			auto tileColumn = idRemainder & 15;

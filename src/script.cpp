@@ -322,9 +322,8 @@ static int l_posiAPITilemapEntry(lua_State *L) {
     int tmy = luaL_checkinteger(L, 3);
 
     auto result = posiAPIGetTilemapEntry(tilemapNum, tmx, tmy);
-    lua_pushinteger(L, (lua_Integer)std::get<0>(result));
-	lua_pushinteger(L, (lua_Integer)std::get<1>(result));
-    return 2; // Return 1 value (the tilemap entry)
+    lua_pushinteger(L, (lua_Integer)result);
+    return 1; // Return 1 value (the tilemap entry)
 
   } else if (num_args == 5) {
     
@@ -332,9 +331,8 @@ static int l_posiAPITilemapEntry(lua_State *L) {
     int tmx = luaL_checkinteger(L, 2);
     int tmy = luaL_checkinteger(L, 3);
     uint16_t entry = (uint16_t)luaL_checkinteger(L, 4);
-	uint8_t attributes = (uint8_t)luaL_checkinteger(L, 5);
 
-    posiAPISetTilemapEntry(tilemapNum, tmx, tmy, entry, attributes);
+    posiAPISetTilemapEntry(tilemapNum, tmx, tmy, entry);
     return 0; // Return no value (void function)
 
   } else {
