@@ -4,6 +4,8 @@ import os
 import zlib
 from PIL import Image
 import xml.etree.ElementTree as ET
+from scipy.spatial import KDTree
+import numpy as np
 import base64
 import struct
 
@@ -91,7 +93,7 @@ def insert_data_with_compression(conn, data, name, type):
                        (name, type, sqlite3.Binary(compressed_data), is_compressed))
         conn.commit()
         r = f"| {len(data)}" if is_compressed else""
-        print(f"'{name}' | '{type}' | {len(compressed_data)} {r}")
+        print(f"'{type}' | '{name}' | {len(compressed_data)} {r}")
     except sqlite3.Error as e:
         print(f"An error occurred while inserting data '{name}': {e}")
 
@@ -143,18 +145,16 @@ def process_tile_images(conn, input_directory):
                 img = Image.open(filepath).convert("RGBA")
                 pixels = img.getdata()
                 width, height = img.size
-
+                
                 tiles_data = bytearray()
-                mask_data = bytearray()
-
+                
                 for pixel in pixels:
                     r, g, b, a = pixel
-                    tiles_data.extend([g, b, r, 255])
-                    mask_data.extend([0 if a == 0 else 255])
+                    #palette, index = palette_tree.query((r, g, b))
+                    tiles_data.extend([b,g, r, 255])
 
                 name_without_extension = os.path.splitext(filename)[0]
                 insert_data_with_compression(conn, tiles_data, name_without_extension, "tiles")
-                insert_data_with_compression(conn, mask_data, name_without_extension, "mask")
 
             except FileNotFoundError:
                 print(f"Error: PNG file not found: {filepath}")
@@ -191,24 +191,24 @@ def process_tilemap_files(conn, input_directory):
                         decoded_data = zlib.decompress(base64.b64decode(encoded_data))
                         tile_ids = struct.unpack('<' + 'I' * (len(decoded_data) // 4), decoded_data)
                         for tile_id in tile_ids:
-                            first_14_bits = tile_id & 0x3FFF
-                            if first_14_bits > 0:
-                                first_14_bits -= 1
+                            first_16_bits = tile_id & 0xFFFF
+                            if first_16_bits > 0:
+                                first_16_bits -= 1
                             bit_30 = (tile_id >> 30) & 1
                             bit_31 = (tile_id >> 31) & 1
-                            combined_value = (bit_31 << 15) | (bit_30 << 14) | first_14_bits
+                            combined_value = (bit_31<<15)|(bit_30<<14)|first_16_bits
                             output_data.extend(combined_value.to_bytes(2, byteorder='little'))
                     elif data_element is not None and data_element.get('encoding') == 'csv':
                         tile_ids_str = data_element.text.strip().split(',')
                         for tile_id_str in tile_ids_str:
                             try:
                                 tile_id = int(tile_id_str)
-                                first_14_bits = tile_id & 0x3FFF
-                                if first_14_bits > 0:
-                                    first_14_bits -= 1
+                                first_16_bits = tile_id & 0xFFFF
+                                if first_16_bits > 0:
+                                    first_16_bits -= 1
                                 bit_30 = (tile_id >> 30) & 1
                                 bit_31 = (tile_id >> 31) & 1
-                                combined_value = (bit_31 << 15) | (bit_30 << 14) | first_14_bits
+                                combined_value = (bit_31<<15)|(bit_30<<14)|first_16_bits
                                 output_data.extend(combined_value.to_bytes(2, byteorder='little'))
                             except ValueError:
                                 print(f"Warning: Could not parse tile ID '{tile_id_str}' in file '{filename}'.")
