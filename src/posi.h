@@ -13,7 +13,6 @@ constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
 constexpr auto numColors = 256;
 
-constexpr auto pixelSizeBytes = 1;
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
