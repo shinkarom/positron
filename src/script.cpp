@@ -325,7 +325,7 @@ static int l_posiAPITilemapEntry(lua_State *L) {
     lua_pushinteger(L, (lua_Integer)result);
     return 1; // Return 1 value (the tilemap entry)
 
-  } else if (num_args == 5) {
+  } else if (num_args == 4) {
     
     int tilemapNum = luaL_checkinteger(L, 1);
     int tmx = luaL_checkinteger(L, 2);

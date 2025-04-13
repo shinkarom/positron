@@ -8,12 +8,12 @@
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
-std::array<uint32_t, numColors> palette;
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return;
 	}
+	if(!(color&0xFF000000)) return;
 	frameBuffer[y * screenWidth + x] = color;
 }
 
@@ -37,12 +37,19 @@ void posiAPIPutPixel(int x, int y, uint32_t color) {
 	posiPutPixel(x, y, color);
 }
 
+
 uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y) {
 	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
 		return 0xFF000000;
 	}
 	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto pxAddress = pageStart + (pixelRowSize * y) +x;
+	auto tileRow = y / 8;
+	auto tileCol = x / 8;
+	auto pxRow = y % 8;
+	auto pxCol = x % 8;
+	auto tileNum = tileRow * 16 + tileCol;
+	auto pxAddr = pxRow * 8 + pxCol;
+	auto pxAddress = pageStart + (tileNum * 64) + pxAddr;
 	return tiles[pxAddress];
 }
 
@@ -51,7 +58,13 @@ void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
 		return;
 	}
 	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto pxAddress = pageStart + (pixelRowSize * y) +x;
+	auto tileRow = y / 8;
+	auto tileCol = x / 8;
+	auto pxRow = y % 8;
+	auto pxCol = x % 8;
+	auto tileNum = tileRow * 16 + tileCol;
+	auto pxAddr = pxRow * 8 + pxCol;
+	auto pxAddress = pageStart + (tileNum * 64) + pxAddr;
 	tiles[pxAddress] = color | 0xFF000000;
 }
 
@@ -62,10 +75,8 @@ uint32_t posiAPIGetTilePixel(int tileNum, int x, int y) {
 	auto pageNum = tileNum / tilesPerPage;
 	auto idRemainder = tileNum % tilesPerPage;
 	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto tileRow = idRemainder / 16;
-	auto tileColumn = idRemainder % 16;
-	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
-	auto pxAddr = tileStart + (y * pixelRowSize) + x;
+	auto tileStart = pageStart + idRemainder*64;
+	auto pxAddr = tileStart + (y * tileSide) + x;
 	return tiles[pxAddr];
 	
 }
@@ -77,10 +88,8 @@ void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
 	auto pageNum = tileNum / tilesPerPage;
 	auto idRemainder = tileNum % tilesPerPage;
 	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto tileRow = idRemainder / 16;
-	auto tileColumn = idRemainder % 16;
-	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
-	auto pxAddr = tileStart + (y * pixelRowSize) + x;
+	auto tileStart = pageStart + idRemainder*64;
+	auto pxAddr = tileStart + (y * tileSide) + x;
 	tiles[pxAddr] = color | 0xFF000000;;
 }
 
@@ -143,13 +152,20 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	if(tileRow + w > 16 || tileColumn + h > 16){
 		return;
 	}
-	auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
 	for(auto yy = 0; yy < h*tileSide; yy++) {
+		auto posY = flipVert ? y + h * tileSide - yy : y+yy;
+		auto divY = yy / tileSide;
+		auto remY = yy % tileSide;
+		auto tileR = tileRow + divY;
 		for(auto xx = 0; xx < w*tileSide; xx++){
-			auto colorPos = tileStart + yy*pixelRowSize + xx;
-			auto pixelColor = tiles[colorPos];
 			auto posX = flipHorz ? x + w * tileSide - xx : x+xx;
-			auto posY = flipVert ? y + h * tileSide - yy : y+yy;
+			auto divX = xx / tileSide;
+			auto remX = xx % tileSide;
+			auto tileC = tileColumn + divX;
+			auto tileN = idRemainder +(tileR*16)+tileC;
+			auto tileStart = pageStart + tileN*64;
+			auto colorPos = tileStart + remY*tileSide + remX;
+			auto pixelColor = tiles[colorPos];
 			posiPutPixel(posX,posY, pixelColor);
 		}
 	}
@@ -171,7 +187,7 @@ void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry){
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y) {
 	if(tilemapNum<0||tilemapNum>=numTilemaps)
 		return;
-	if(tmx<0||tmx>=tilemapTotalWidthTiles||tmy<0||tmy>=tilemapTotalHeightTiles)
+	if(tmx<0||tmx>=tilemapTotalWidthTiles*tileSide||tmy<0||tmy>=tilemapTotalHeightTiles*tileSide)
 		return;
 	if(tmw<0||tmh<0)
 		return;
@@ -180,13 +196,13 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 	auto maxX = x+tmw>=screenWidth?screenWidth-1:x+tmw-1;
 	auto maxY = y+tmh>=screenHeight?screenHeight-1:y+tmh-1;
 	for(auto yy = y;yy<=maxY; yy++) {
+		auto tmyy = (tmy+(yy-y))%(tilemapTotalHeightTiles*tileSide);
+		auto tmTileY = tmyy / tileSide;
+		auto tmPixelY = tmyy % tileSide;
 		for(auto xx = x;xx<=maxX;xx++){
 			auto tmxx = (tmx+(xx-x))%(tilemapTotalWidthTiles*tileSide);
-			auto tmyy = (tmy+(yy-y))%(tilemapTotalHeightTiles*tileSide);
 			auto tmTileX = tmxx / tileSide;
-			auto tmTileY = tmyy / tileSide;
 			auto tmPixelX = tmxx % tileSide;
-			auto tmPixelY = tmyy % tileSide;
 			auto tileAddr = tmTileY*tilemapTotalWidthTiles+tmTileX;
 			auto tileNum = tilemaps[tilemapNum][tileAddr];
 			auto realTileNum = tileNum & 0x3FFF;
@@ -207,10 +223,8 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			auto pageNum = realTileNum / tilesPerPage;
 			auto idRemainder = realTileNum % tilesPerPage;
 			auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-			auto tileRow = idRemainder >> 4;
-			auto tileColumn = idRemainder & 15;
-			auto tileStart = pageStart + tileRow * tileRowSize + tileColumn * tileSide;
-			auto pixelPos = tileStart + tmPixelY*pixelRowSize+tmPixelX;
+			auto tileStart = pageStart + idRemainder * 64;
+			auto pixelPos = tileStart + tmPixelY*tileSide+tmPixelX;
 			auto color = tiles[pixelPos];
 			posiPutPixel(xx, yy,color);
 		}

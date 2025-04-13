@@ -148,10 +148,22 @@ def process_tile_images(conn, input_directory):
                 
                 tiles_data = bytearray()
                 
-                for pixel in pixels:
-                    r, g, b, a = pixel
-                    #palette, index = palette_tree.query((r, g, b))
-                    tiles_data.extend([b,g, r, 255])
+                for i in range(128*128):
+                    tileNum = i // 64
+                    pxNum = i % 64
+                    tileRow = tileNum // 16
+                    tileCol = tileNum % 16
+                    tileY = pxNum // 8
+                    tileX = pxNum % 8
+                    pxX = tileCol*8+tileX
+                    pxY = tileRow*8+tileY
+                    r, g, b, a = img.getpixel((pxX,pxY))
+                    tiles_data.extend([b,g, r, a])
+                    
+                
+                #for pixel in pixels:
+                #    r, g, b, a = pixel
+                #    tiles_data.extend([b,g, r, a])
 
                 name_without_extension = os.path.splitext(filename)[0]
                 insert_data_with_compression(conn, tiles_data, name_without_extension, "tiles")
