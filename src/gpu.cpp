@@ -4,6 +4,7 @@
 #include <cstring>
 #include <array>
 #include <utility>
+#include <algorithm>
 
 std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
@@ -229,4 +230,31 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 			posiPutPixel(xx, yy,color);
 		}
 	}
+}
+
+void posiAPIDrawLine(int x1, int y1, int x2,int y2, uint32_t color) {
+	x1 = std::clamp(x1,0,screenWidth-1);
+	y1 = std::clamp(y1,0,screenHeight-1);
+	x2 = std::clamp(x2,0,screenWidth-1);
+	y2 = std::clamp(y2,0,screenHeight-1);
+	
+	int dx = std::abs(x2 - x1);
+    int dy = std::abs(y2 - y1);
+    int sx = (x1 < x2) ? 1 : -1;
+    int sy = (y1 < y2) ? 1 : -1;
+    int err = dx - dy;
+
+    while (true) {
+        posiAPIPutPixel(x1, y1, color);
+        if (x1 == x2 && y1 == y2) break;
+        int e2 = 2 * err;
+        if (e2 > -dy) {
+            err = err - dy;
+            x1 = x1 + sx;
+        }
+        if (e2 < dx) {
+            err = err + dx;
+            y1 = y1 + sy;
+        }
+    }
 }
