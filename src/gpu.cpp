@@ -258,3 +258,160 @@ void posiAPIDrawLine(int x1, int y1, int x2,int y2, uint32_t color) {
         }
     }
 }
+
+void posiAPIDrawRect(int x1, int y1, int x2, int y2, uint32_t color) {
+    int minX = std::min(x1, x2);
+    int minY = std::min(y1, y2);
+    int maxX = std::max(x1, x2);
+    int maxY = std::max(y1, y2);
+
+    // Clamp the rectangle coordinates
+    minX = std::clamp(minX, 0, screenWidth - 1);
+    minY = std::clamp(minY, 0, screenHeight - 1);
+    maxX = std::clamp(maxX, 0, screenWidth - 1);
+    maxY = std::clamp(maxY, 0, screenHeight - 1);
+
+    // Draw the four lines of the rectangle
+    posiAPIDrawLine(minX, minY, maxX, minY, color); // Top
+    posiAPIDrawLine(maxX, minY, maxX, maxY, color); // Right
+    posiAPIDrawLine(maxX, maxY, minX, maxY, color); // Bottom
+    posiAPIDrawLine(minX, maxY, minX, minY, color); // Left
+}
+
+void posiAPIDrawFilledRect(int x1, int y1, int x2, int y2, uint32_t color) {
+    int minX = std::min(x1, x2);
+    int minY = std::min(y1, y2);
+    int maxX = std::max(x1, x2);
+    int maxY = std::max(y1, y2);
+
+    // Clamp the rectangle coordinates
+    minX = std::clamp(minX, 0, screenWidth - 1);
+    minY = std::clamp(minY, 0, screenHeight - 1);
+    maxX = std::clamp(maxX, 0, screenWidth - 1);
+    maxY = std::clamp(maxY, 0, screenHeight - 1);
+
+    // Iterate through each row within the rectangle and draw a horizontal line
+    for (int y = minY; y <= maxY; ++y) {
+        posiAPIDrawLine(minX, y, maxX, y, color);
+    }
+}
+
+
+void posiAPIDrawCircle(int centerX, int centerY, int radius, uint32_t color) {
+    int x = 0;
+    int y = radius;
+    int d = 3 - 2 * radius;
+
+    auto drawPixel = [&](int px, int py) {
+        int clampedX = std::clamp(px, 0, screenWidth - 1);
+        int clampedY = std::clamp(py, 0, screenHeight - 1);
+        posiAPIPutPixel(clampedX, clampedY, color);
+    };
+
+    while (x <= y) {
+        drawPixel(centerX + x, centerY + y);
+        drawPixel(centerX - x, centerY + y);
+        drawPixel(centerX + x, centerY - y);
+        drawPixel(centerX - x, centerY - y);
+        drawPixel(centerX + y, centerY + x);
+        drawPixel(centerX - y, centerY + x);
+        drawPixel(centerX + y, centerY - x);
+        drawPixel(centerX - y, centerY - x);
+
+        if (d < 0) {
+            d = d + 4 * x + 6;
+        } else {
+            d = d + 4 * (x - y) + 10;
+            y--;
+        }
+        x++;
+    }
+}
+
+void posiAPIDrawFilledCircle(int centerX, int centerY, int radius, uint32_t color) {
+    int x = 0;
+    int y = radius;
+    int d = 3 - 2 * radius;
+
+    auto drawHorizontalLine = [&](int yCoord, int xStart, int xEnd) {
+        int clampedY = std::clamp(yCoord, 0, screenHeight - 1);
+        int clampedXStart = std::clamp(xStart, 0, screenWidth - 1);
+        int clampedXEnd = std::clamp(xEnd, 0, screenWidth - 1);
+        if (clampedXStart <= clampedXEnd) {
+            posiAPIDrawLine(clampedXStart, clampedY, clampedXEnd, clampedY, color);
+        } else {
+            posiAPIDrawLine(clampedXEnd, clampedY, clampedXStart, clampedY, color);
+        }
+    };
+
+    while (x <= y) {
+        drawHorizontalLine(centerY + y, centerX - x, centerX + x);
+        drawHorizontalLine(centerY - y, centerX - x, centerX + x);
+
+        if (x != y) {
+            drawHorizontalLine(centerY + x, centerX - y, centerX + y);
+            drawHorizontalLine(centerY - x, centerX - y, centerX + y);
+        }
+
+        if (d < 0) {
+            d = d + 4 * x + 6;
+        } else {
+            d = d + 4 * (x - y) + 10;
+            y--;
+        }
+        x++;
+    }
+}
+
+void posiAPIDrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) {
+    // Clamp the coordinates
+    int cX1 = std::clamp(x1, 0, screenWidth - 1);
+    int cY1 = std::clamp(y1, 0, screenHeight - 1);
+    int cX2 = std::clamp(x2, 0, screenWidth - 1);
+    int cY2 = std::clamp(y2, 0, screenHeight - 1);
+    int cX3 = std::clamp(x3, 0, screenWidth - 1);
+    int cY3 = std::clamp(y3, 0, screenHeight - 1);
+
+    // Draw the three lines of the triangle
+    posiAPIDrawLine(cX1, cY1, cX2, cY2, color);
+    posiAPIDrawLine(cX2, cY2, cX3, cY3, color);
+    posiAPIDrawLine(cX3, cY3, cX1, cY1, color);
+}
+
+void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) {
+    // Sort vertices by y-coordinate
+    std::vector<std::pair<int, int>> vertices = {{y1, x1}, {y2, x2}, {y3, x3}};
+    std::sort(vertices.begin(), vertices.end());
+
+    int y_min = vertices[0].first;
+    int y_mid = vertices[1].first;
+    int y_max = vertices[2].first;
+    int x_min = vertices[0].second;
+    int x_mid = vertices[1].second;
+    int x_max = vertices[2].second;
+
+    auto interpolate = [](int y, int y1, int x1, int y2, int x2) {
+        if (y2 == y1) return x1;
+        return static_cast<int>(static_cast<double>(x1) + (static_cast<double>(y - y1) / (y2 - y1)) * (x2 - x1));
+    };
+
+    for (int y = y_min; y <= y_max; ++y) {
+        int x_left, x_right;
+
+        if (y <= y_mid) {
+            x_left = interpolate(y, y_min, x_min, y_mid, x_mid);
+            x_right = interpolate(y, y_min, x_min, y_max, x_max);
+        } else {
+            x_left = interpolate(y, y_mid, x_mid, y_max, x_max);
+            x_right = interpolate(y, y_min, x_min, y_max, x_max);
+        }
+
+        if (x_left > x_right) std::swap(x_left, x_right);
+
+        for (int x = x_left; x <= x_right; ++x) {
+            if (x >= 0 && x < screenWidth && y >= 0 && y < screenHeight) {
+                posiAPIPutPixel(x, y, color);
+            }
+        }
+    }
+}

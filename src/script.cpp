@@ -332,6 +332,98 @@ static int l_posiAPIDrawLine(lua_State *L) {
     return 0; // No return values to Lua
 }
 
+// Wrapper for posiAPIDrawRect
+static int l_posiAPIDrawRect(lua_State *L) {
+    if (lua_gettop(L) != 5) {
+        luaL_error(L, "Expected 5 arguments: x1, y1, x2, y2, color");
+        return 0;
+    }
+    int x1 = luaL_checkinteger(L, 1);
+    int y1 = luaL_checkinteger(L, 2);
+    int x2 = luaL_checkinteger(L, 3);
+    int y2 = luaL_checkinteger(L, 4);
+    uint32_t color = luaL_checkinteger(L, 5);
+    posiAPIDrawRect(x1, y1, x2, y2, color);
+    return 0;
+}
+
+// Wrapper for posiAPIDrawFilledRect
+static int l_posiAPIDrawFilledRect(lua_State *L) {
+    if (lua_gettop(L) != 5) {
+        luaL_error(L, "Expected 5 arguments: x1, y1, x2, y2, color");
+        return 0;
+    }
+    int x1 = luaL_checkinteger(L, 1);
+    int y1 = luaL_checkinteger(L, 2);
+    int x2 = luaL_checkinteger(L, 3);
+    int y2 = luaL_checkinteger(L, 4);
+    uint32_t color = luaL_checkinteger(L, 5);
+    posiAPIDrawFilledRect(x1, y1, x2, y2, color);
+    return 0;
+}
+
+// Wrapper for posiAPIDrawCircle
+static int l_posiAPIDrawCircle(lua_State *L) {
+    if (lua_gettop(L) != 4) {
+        luaL_error(L, "Expected 4 arguments: centerX, centerY, radius, color");
+        return 0;
+    }
+    int centerX = luaL_checkinteger(L, 1);
+    int centerY = luaL_checkinteger(L, 2);
+    int radius = luaL_checkinteger(L, 3);
+    uint32_t color = luaL_checkinteger(L, 4);
+    posiAPIDrawCircle(centerX, centerY, radius, color);
+    return 0;
+}
+
+// Wrapper for posiAPIDrawFilledCircle
+static int l_posiAPIDrawFilledCircle(lua_State *L) {
+    if (lua_gettop(L) != 4) {
+        luaL_error(L, "Expected 4 arguments: centerX, centerY, radius, color");
+        return 0;
+    }
+    int centerX = luaL_checkinteger(L, 1);
+    int centerY = luaL_checkinteger(L, 2);
+    int radius = luaL_checkinteger(L, 3);
+    uint32_t color = luaL_checkinteger(L, 4);
+    posiAPIDrawFilledCircle(centerX, centerY, radius, color);
+    return 0;
+}
+
+// Wrapper for posiAPIDrawTriangle
+static int l_posiAPIDrawTriangle(lua_State *L) {
+    if (lua_gettop(L) != 7) {
+        luaL_error(L, "Expected 7 arguments: x1, y1, x2, y2, x3, y3, color");
+        return 0;
+    }
+    int x1 = luaL_checkinteger(L, 1);
+    int y1 = luaL_checkinteger(L, 2);
+    int x2 = luaL_checkinteger(L, 3);
+    int y2 = luaL_checkinteger(L, 4);
+    int x3 = luaL_checkinteger(L, 5);
+    int y3 = luaL_checkinteger(L, 6);
+    uint32_t color = luaL_checkinteger(L, 7);
+    posiAPIDrawTriangle(x1, y1, x2, y2, x3, y3, color);
+    return 0;
+}
+
+// Wrapper for posiAPIDrawFilledTriangle
+static int l_posiAPIDrawFilledTriangle(lua_State *L) {
+    if (lua_gettop(L) != 7) {
+        luaL_error(L, "Expected 7 arguments: x1, y1, x2, y2, x3, y3, color");
+        return 0;
+    }
+    int x1 = luaL_checkinteger(L, 1);
+    int y1 = luaL_checkinteger(L, 2);
+    int x2 = luaL_checkinteger(L, 3);
+    int y2 = luaL_checkinteger(L, 4);
+    int x3 = luaL_checkinteger(L, 5);
+    int y3 = luaL_checkinteger(L, 6);
+    uint32_t color = luaL_checkinteger(L, 7);
+    posiAPIDrawFilledTriangle(x1, y1, x2, y2, x3, y3, color);
+    return 0;
+}
+
 static int l_posiAPITilemapEntry(lua_State *L) {
   int num_args = lua_gettop(L);
 
@@ -494,6 +586,12 @@ static const struct luaL_Reg api_funcs[] = {
     {"drawSprite", lua_api_drawSprite},
     {"drawTilemap", l_posiAPIDrawTilemap},
 	{"drawLine", l_posiAPIDrawLine},
+	{"drawRect", l_posiAPIDrawRect},
+	{"drawFilledRect", l_posiAPIDrawFilledRect},
+	{"drawTri", l_posiAPIDrawTriangle},
+	{"drawFilledTri", l_posiAPIDrawFilledTriangle},
+	{"drawCircle", l_posiAPIDrawCircle},
+	{"drawFilledCircle", l_posiAPIDrawFilledCircle},
     {"tilemapEntry", l_posiAPITilemapEntry},
     {"operatorParameter", l_posiAPIOperatorParameter},
     {"globalParameter", l_posiAPIGlobalParameter},

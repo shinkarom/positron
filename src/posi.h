@@ -74,6 +74,12 @@ void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
 void posiAPIDrawLine(int x1, int y1, int x2, int y2, uint32_t color);
+void posiAPIDrawRect(int x1, int y1, int x2, int y2, uint32_t color) ;
+void posiAPIDrawFilledRect(int x1, int y1, int x2, int y2, uint32_t color);
+void posiAPIDrawCircle(int centerX, int centerY, int radius, uint32_t color);
+void posiAPIDrawFilledCircle(int centerX, int centerY, int radius, uint32_t color);
+void posiAPIDrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) ;
+void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color);
 uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
 void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy, uint16_t entry);
 
