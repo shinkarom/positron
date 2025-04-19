@@ -424,6 +424,45 @@ static int l_posiAPIDrawFilledTriangle(lua_State *L) {
     return 0;
 }
 
+static int lua_posiAPIDrawText(lua_State *L) {
+    // Check the number of arguments
+    int argc = lua_gettop(L);
+    if (argc != 6) {
+        luaL_error(L, "Expected 6 arguments, but got %d", argc);
+    }
+
+    // Get arguments from the Lua stack
+    // Argument 1: text (string)
+    size_t text_len;
+    const char* text_c_str = luaL_checklstring(L, 1, &text_len);
+    std::string text(text_c_str, text_len);
+
+    // Argument 2: x (integer)
+    int x = luaL_checkinteger(L, 2);
+
+    // Argument 3: y (integer)
+    int y = luaL_checkinteger(L, 3);
+
+    // Argument 6: proportional (boolean)
+    // lua_toboolean returns 0 for false, 1 for true, and 0 for non-boolean types (but luaL_checktype could be used for stricter checking)
+    bool proportional = lua_toboolean(L, 4);
+
+    // Argument 7: color (uint32_t) - Lua numbers are typically doubles, but can represent integers
+    uint32_t color = static_cast<uint32_t>(luaL_checkinteger(L, 5));
+
+    // Argument 8: start (integer)
+    int start = luaL_checkinteger(L, 6);
+
+    // Call the original C++ function
+    int result = posiAPIDrawText(text, x, y, proportional, color, start);
+
+    // Push the result back to the Lua stack
+    lua_pushinteger(L, result);
+
+    // Return the number of results pushed onto the stack
+    return 1;
+}
+
 static int l_posiAPITilemapEntry(lua_State *L) {
   int num_args = lua_gettop(L);
 
@@ -592,6 +631,7 @@ static const struct luaL_Reg api_funcs[] = {
 	{"drawFilledTri", l_posiAPIDrawFilledTriangle},
 	{"drawCircle", l_posiAPIDrawCircle},
 	{"drawFilledCircle", l_posiAPIDrawFilledCircle},
+	{"drawText", lua_posiAPIDrawText},
     {"tilemapEntry", l_posiAPITilemapEntry},
     {"operatorParameter", l_posiAPIOperatorParameter},
     {"globalParameter", l_posiAPIGlobalParameter},

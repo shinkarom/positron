@@ -163,7 +163,8 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 			auto divX = xx / tileSide;
 			auto remX = xx % tileSide;
 			auto tileC = tileColumn + divX;
-			auto tileN = idRemainder +(tileR*16)+tileC;
+			auto tileN = (tileR*16)+tileC;
+			//std::cout<<id<<" | "<<idRemainder<<" | "<<tileRow<<" "<<tileColumn<<" | "<<tileR<<" "<<tileC<<" | "<<tileN<<std::endl;
 			auto tileStart = pageStart + tileN*64;
 			auto colorPos = tileStart + remY*tileSide + remX;
 			auto pixelColor = tiles[colorPos];
@@ -414,4 +415,79 @@ void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, u
             }
         }
     }
+}
+
+int posiAPIDrawText(const std::string& text, int x, int y, bool proportional, uint32_t color,int start){
+	if(x <0 || y < 0 || start < 0 || start >= numTiles) {
+		return 0;
+	}
+	auto textWidth = 0;
+	auto textHeight = 0;
+	auto charStartX = x;
+	auto charStartY = y;
+	
+	auto lineHeight = 0;
+	
+	for(char ch : text) {
+		if(charStartX>=screenWidth || charStartY >= screenHeight) { break; }
+
+		if(ch == '\n') {
+			charStartX = x;
+			auto g = proportional ? lineHeight+1 : tileSide;
+			charStartY += g;
+			textHeight += g;
+			continue;
+		} else if(ch == '\t') {
+			constexpr auto tabStopWidth = 4 * tileSide;
+			auto addAmount = tabStopWidth - (charStartX % tabStopWidth);
+			charStartX += addAmount;
+			textWidth += addAmount;
+			continue;
+		} else if (ch < ' '|| ch > 127) { continue; }
+		
+		auto tileId = start + ch - 32;
+		if(tileId >= numTiles) {
+			continue;
+		}
+		auto tileStart = tileId * tileSide * tileSide;
+		
+		//get bounding box
+		auto horzMin = 0;
+		auto horzMax = -1;
+		if(proportional) {
+			for (auto tileY = 0; tileY < tileSide; tileY++) {
+				for (auto tileX = 0; tileX < tileSide; tileX++) {
+					auto tilePixelColor = tiles[tileStart+tileY*tileSide+tileX];
+					if(tilePixelColor != 0x00000000) {
+						if(horzMin == 0 || tileX < horzMin) {horzMin = tileX;}
+						if(tileX > horzMax) {horzMax = tileX;}
+						if(tileY > lineHeight) {lineHeight = tileY;}
+					}
+				}
+			}	
+		} else {
+			horzMax = tileSide - 1;
+			lineHeight = tileSide - 1;
+		}
+		if(horzMax == -1) {
+			auto g = proportional ? 4 : tileSide;
+			charStartX += g;
+			textWidth += g;
+			continue;
+		} 
+		for (auto tileY = 0; tileY <= lineHeight; tileY++) {
+			for (auto tileX = horzMin; tileX <= horzMax; tileX++) {
+				auto xxxx = tileX - horzMin;
+				auto c = tiles[tileStart+tileY*tileSide+tileX];
+				if(c != 0x00000000) {
+					posiAPIPutPixel(charStartX+xxxx, charStartY+tileY, color);
+				}
+			}
+		}
+		auto g = proportional ? horzMax - horzMin + 1 + 1 : tileSide;
+		charStartX += g;
+		textWidth += g;
+		
+	}
+	return textWidth;
 }

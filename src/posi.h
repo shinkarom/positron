@@ -80,6 +80,7 @@ void posiAPIDrawCircle(int centerX, int centerY, int radius, uint32_t color);
 void posiAPIDrawFilledCircle(int centerX, int centerY, int radius, uint32_t color);
 void posiAPIDrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) ;
 void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color);
+int posiAPIDrawText(const std::string& text, int x, int y, bool proportional, uint32_t color,int start);
 uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy);
 void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy, uint16_t entry);
 
