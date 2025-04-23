@@ -605,6 +605,51 @@ static int l_posiAPISetPitchBend(lua_State *L) {
   return 0;
 }
 
+static int lua_posiAPIIsSlotPresent(lua_State *L) {
+    // Check and get the integer argument from the stack.
+    // luaL_checkinteger is safer than lua_tointeger as it throws an error
+    // if the argument is not an integer or convertible to one.
+    int slotNum = luaL_checkinteger(L, 1); // 1 is the index of the first argument
+
+    // Call the original C function
+    bool is_present = posiAPIIsSlotPresent(slotNum);
+
+    // Push the boolean result onto the Lua stack
+    lua_pushboolean(L, is_present);
+
+    // Return the number of results pushed onto the stack (1 in this case)
+    return 1;
+}
+
+static int lua_posiAPISlotDelete(lua_State *L) {
+    // Get the number of arguments on the stack
+    int num_args = lua_gettop(L);
+    bool success = false;
+
+    switch (num_args) {
+        case 0:
+            // No arguments: call posiAPISlotDeleteAll
+            success = posiAPISlotDeleteAll();
+            lua_pushboolean(L, success);
+            return 1; // Return 1 result (the boolean)
+
+        case 1: {
+            // One argument: check if it's an integer and call posiAPISlotDelete
+            // luaL_checkinteger is safer as it validates the type
+            int slotNum = luaL_checkinteger(L, 1); // Get the first argument
+
+            success = posiAPISlotDelete(slotNum);
+            lua_pushboolean(L, success);
+            return 1; // Return 1 result (the boolean)
+        }
+
+        default:
+            // Incorrect number of arguments
+            luaL_error(L, "Expected 0 or 1 argument, but received %d", num_args);
+            return 0; // luaL_error does not return, but for completeness
+    }
+}
+
 // Error handler function to be used with lua_pcall, using luaL_traceback
 static int tracebackErrorHandler(lua_State *L) {
     // 'luaL_traceback' expects the error message to be at the top of the stack (index -1)
@@ -640,6 +685,8 @@ static const struct luaL_Reg api_funcs[] = {
     {"setSustain", l_posiAPISetSustain},
     {"setModWheel", l_posiAPISetModWheel},
     {"setPitchBend", l_posiAPISetPitchBend},
+	{"isSlotPresent", lua_posiAPIIsSlotPresent},
+	{"slotDelete", lua_posiAPISlotDelete},
     {NULL, NULL} // Sentinel value to mark the end of the array
 };
 

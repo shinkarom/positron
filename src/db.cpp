@@ -64,6 +64,58 @@ std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int nu
 	return dbLoadByName(tableName, r);
 }
 
+bool posiAPIIsSlotPresent(int slotNum) {
+	if(slotNum<0 ||slotNum>=numSlots) {
+		return false;
+	}
+	sqlite3_stmt* stmt;
+	std::string query = "select 1 from saves where number=?";
+	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
+		return false;
+	} 
+	sqlite3_bind_int(stmt, 1, slotNum);
+
+	if(sqlite3_step(stmt) != SQLITE_ROW) {
+		return false;
+	}
+	
+	auto result = sqlite3_column_int(stmt, 0);
+	return result != 0;
+}
+
+bool posiAPISlotDelete(int slotNum) {
+	if(slotNum<0 ||slotNum>=numSlots) {
+		return false;
+	}
+	sqlite3_stmt* stmt;
+	std::string query = "delete from saves where number=?";
+	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
+		return false;
+	} 
+	sqlite3_bind_int(stmt, 1, slotNum);
+
+	if(sqlite3_step(stmt) != SQLITE_DONE) {
+		return false;
+	}
+	return true;
+}
+
+bool posiAPISlotDeleteAll() {
+	sqlite3_stmt* stmt;
+	std::string query = "delete from saves";
+	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
+		return false;
+	} 
+
+	if(sqlite3_step(stmt) != SQLITE_DONE) {
+		return false;
+	}
+	return true;
+}
+
 void dbDisconnect() {
 	sqlite3_close(db);
 }

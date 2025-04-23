@@ -10,8 +10,6 @@ constexpr auto screenHeight = 256;
 constexpr auto audioSampleRate = 44100;
 constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
-constexpr auto numColors = 256;
-
 constexpr auto tileSide = 8;
 constexpr auto tilesPerPage = 256;
 constexpr auto pixelsPerPage = tilesPerPage * tileSide * tileSide;
@@ -35,6 +33,8 @@ constexpr auto tilemapTotalBytes = tilemapTotalTiles * 2;
 
 constexpr auto numInputButtons = 12;
 constexpr auto numAudioChannels = 8;
+
+constexpr auto numSlots = 64;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
@@ -104,6 +104,10 @@ void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
 bool API_isJustPressed(int buttonNumber);
 bool API_isJustReleased(int buttonNumber);
+
+bool posiAPIIsSlotPresent(int slotNum);
+bool posiAPISlotDelete(int slotNum);
+bool posiAPISlotDeleteAll();
 
 bool posiStateGameRun();
 
