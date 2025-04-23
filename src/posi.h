@@ -38,6 +38,8 @@ constexpr auto numSlots = 64;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
+bool dbSlotSave(int number, std::vector<uint8_t>& value);
+std::optional<std::vector<uint8_t>> dbSlotLoad(int number);
 bool dbTryConnect(std::string fileName);
 void dbDisconnect();
 
