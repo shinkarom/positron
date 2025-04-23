@@ -150,20 +150,6 @@ bool posiAPIIsSlotPresent(int slotNum) {
 	return result != 0;
 }
 
-bool dbVacuum() {
-	sqlite3_stmt* stmt;
-	std::string query = "vacuum";
-	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
-		return false;
-	} 
-
-	if(sqlite3_step(stmt) != SQLITE_DONE) {
-		return false;
-	}
-	return true;
-}
-
 bool posiAPISlotDelete(int slotNum) {
 	if(slotNum<0 ||slotNum>=numSlots) {
 		return false;
@@ -303,10 +289,24 @@ std::optional<std::vector<uint8_t>> dbSlotLoad(int number) {
 	}	
 }
 
-void dbDisconnect() {
-	if(db){
-		dbVacuum();
+bool dbVacuum() {
+	std::cout<<"vacuuming"<<std::endl;
+	sqlite3_stmt* stmt;
+	std::string query = "vacuum";
+	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
+		return false;
+	} 
+
+	if(sqlite3_step(stmt) != SQLITE_DONE) {
+		return false;
 	}
+	return true;
+}
+
+void dbDisconnect() {
+	std::cout<<"disconnecting"<<std::endl;
+	if(db) {dbVacuum();}
 	sqlite3_close(db);
 }
 
