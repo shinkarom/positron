@@ -184,6 +184,7 @@ bool posiAPISlotDeleteAll() {
 }
 
 bool dbSlotSave(int number, std::vector<uint8_t>& value) {
+	if(number < 0 || number >= numSlots) return false;
     // 1. Conditionally compress the input data.
     // This function returns the data to save (either original or compressed)
     // and an integer flag indicating if it was compressed.
@@ -261,6 +262,8 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
 }
 
 std::optional<std::vector<uint8_t>> dbSlotLoad(int number) {
+	if(number < 0 || number >= numSlots || !posiAPIIsSlotPresent(number)) return std::nullopt;
+	
 	sqlite3_stmt* stmt;
 	std::string query = "select data, compressed from saves where number=? ";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -290,7 +293,6 @@ std::optional<std::vector<uint8_t>> dbSlotLoad(int number) {
 }
 
 bool dbVacuum() {
-	std::cout<<"vacuuming"<<std::endl;
 	sqlite3_stmt* stmt;
 	std::string query = "vacuum";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -305,7 +307,6 @@ bool dbVacuum() {
 }
 
 void dbDisconnect() {
-	std::cout<<"disconnecting"<<std::endl;
 	if(db) {dbVacuum();}
 	sqlite3_close(db);
 }

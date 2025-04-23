@@ -127,6 +127,9 @@ int main(int argc, char *argv[])
 			} else if (event.type == SDL_EVENT_KEY_DOWN) {
 				
 			} else if (event.type == SDL_EVENT_KEY_UP) {
+				if(event.key.scancode == SDL_SCANCODE_F9) {
+					posiAPISlotDeleteAll();
+				}
 				if(event.key.scancode == SDL_SCANCODE_F10) {
 					if(!posiReset()){
 						done = true;
