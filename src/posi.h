@@ -5,8 +5,12 @@
 #include <vector>
 #include <optional>
 
-constexpr auto screenWidth = 256;
-constexpr auto screenHeight = 256;
+constexpr auto maxScreenWidth = 256;
+constexpr auto maxScreenHeight = 256;
+constexpr auto defaultScreenWidth = 256;
+constexpr auto defaultScreenHeight = 256;
+extern int screenWidth;
+extern int screenHeight;
 constexpr auto audioSampleRate = 44100;
 constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
@@ -23,8 +27,8 @@ constexpr auto tileRowSize = pixelRowSize * tileSide;
 constexpr auto numTilemaps = 32;
 constexpr auto tilemapWidthScreens = tileSide;
 constexpr auto tilemapHeightScreens = tileSide;
-constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
-constexpr auto tilemapScreenHeightTiles = screenHeight / tileSide;
+constexpr auto tilemapScreenWidthTiles = maxScreenWidth / tileSide;
+constexpr auto tilemapScreenHeightTiles = maxScreenHeight / tileSide;
 constexpr auto tilemapScreenTotalTiles = tilemapScreenWidthTiles * tilemapScreenHeightTiles;
 constexpr auto tilemapTotalWidthTiles = tilemapScreenWidthTiles * tilemapWidthScreens;
 constexpr auto tilemapTotalHeightTiles = tilemapScreenHeightTiles * tilemapHeightScreens;
@@ -66,6 +70,7 @@ void gpuClear();
 void gpuReset();
 void posiRedraw(uint32_t* buffer);
 void posiPutPixel(int x, int y, uint32_t color);
+void posiSetResolution(int width, int height);
 void posiAPICls(uint32_t color);
 uint32_t posiAPIGetPixel(int x, int y);
 void posiAPIPutPixel(int x, int y, uint32_t color);

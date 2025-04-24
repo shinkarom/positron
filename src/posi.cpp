@@ -9,6 +9,9 @@
 int gameState;
 std::string loadedFileName;
 
+int screenWidth;
+int screenHeight;
+
 void posiPoweron() {	
 	luaInit();
 	gpuInit();

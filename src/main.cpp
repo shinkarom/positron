@@ -38,24 +38,6 @@ void destroyPosiSDL() {
 	SDL_Quit();
 }
 
-SDL_FRect calcRect(SDL_FRect srcRect) {
-	int windowWidth, windowHeight;
-    SDL_GetCurrentRenderOutputSize(renderer, &windowWidth, &windowHeight);
-	float scaleX = (float)windowWidth / srcRect.w;
-    float scaleY = (float)windowHeight / srcRect.h;
-	float scale = scaleX < scaleY ? scaleX : scaleY;
-    float destWidth = srcRect.w * scale;
-    float destHeight = srcRect.h * scale;
-    float destX = (windowWidth - destWidth) / 2; // Center horizontally
-    float destY = (windowHeight - destHeight) / 2; // Center vertically
-	SDL_FRect destRect;
-    destRect.x = destX;
-    destRect.y = destY;
-    destRect.w = destWidth;
-    destRect.h = destHeight;
-	return destRect;
-}
-
 constexpr SDL_Scancode inputScancodes[numInputButtons] = {
 	SDL_SCANCODE_UP,
 	SDL_SCANCODE_DOWN,
@@ -104,12 +86,12 @@ int main(int argc, char *argv[])
 	
 	bool done = false;
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	window = SDL_CreateWindow("Positron", screenWidth*3, screenHeight*3, 
+	window = SDL_CreateWindow("Positron", maxScreenWidth*3, maxScreenHeight*3, 
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-	SDL_SetWindowMinimumSize(window, screenWidth, screenHeight);
+	SDL_SetWindowMinimumSize(window, maxScreenWidth, maxScreenHeight);
 	renderer = SDL_CreateRenderer(window, nullptr);
-	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
+	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, maxScreenWidth, maxScreenHeight);
 	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 	
 	SDL_FRect texRect, winRect;
@@ -143,12 +125,6 @@ int main(int argc, char *argv[])
 					hasFullscreen = !hasFullscreen;
 					SDL_SetWindowFullscreen(window,hasFullscreen);
 				}
-			} else if (event.type == SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED) {
-				texRect.x = 0;
-				texRect.y = 0;
-				texRect.w = screenWidth;
-				texRect.h = screenHeight;
-				winRect = calcRect(texRect);
 			}
 		}
 		if(!isPaused) {
@@ -158,6 +134,26 @@ int main(int argc, char *argv[])
 			 }
 		}
 		 
+		texRect.x = 0;
+		texRect.y = 0;
+		texRect.w = screenWidth;
+		texRect.h = screenHeight;
+		
+		int windowWidth, windowHeight;
+		SDL_GetCurrentRenderOutputSize(renderer, &windowWidth, &windowHeight);
+		float scaleX = (float)windowWidth / texRect.w;
+		float scaleY = (float)windowHeight / texRect.h;
+		float scale = scaleX < scaleY ? scaleX : scaleY;
+		float destWidth = texRect.w * scale;
+		float destHeight = texRect.h * scale;
+		float destX = (windowWidth - destWidth) / 2.0; // Center horizontally
+		float destY = (windowHeight - destHeight) / 2.0; // Center vertically
+		winRect.x = destX;
+		winRect.y = destY;
+		winRect.w = destWidth;
+		winRect.h = destHeight;
+		
+		
 		 
 		 if(isPaused) {
 			 

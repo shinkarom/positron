@@ -708,6 +708,26 @@ static int lua_posiAPISlotDelete(lua_State *L) {
     }
 }
 
+static int lua_Resolution(lua_State *L) {
+	int num_args = lua_gettop(L);
+	switch (num_args) {
+		case 0:
+			lua_pushinteger(L, screenWidth);
+			lua_pushinteger(L, screenHeight);
+			return 2;
+		case 2: {
+			auto w = luaL_checkinteger(L, 1);
+			auto h = luaL_checkinteger(L, 2);
+			posiSetResolution(w, h);
+			return 0;
+		}
+		default:
+            // Incorrect number of arguments
+            luaL_error(L, "Expected 0 or 2 argument, but received %d", num_args);
+            return 0; // luaL_error does not return, but for completeness
+	}
+}
+
 // Error handler function to be used with lua_pcall, using luaL_traceback
 static int tracebackErrorHandler(lua_State *L) {
     // 'luaL_traceback' expects the error message to be at the top of the stack (index -1)
@@ -747,6 +767,7 @@ static const struct luaL_Reg api_funcs[] = {
 	{"slotSave", lua_slotSave},
 	{"slotLoad", lua_slotLoad},
 	{"slotDelete", lua_posiAPISlotDelete},
+	{"resolution",lua_Resolution},
     {NULL, NULL} // Sentinel value to mark the end of the array
 };
 

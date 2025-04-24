@@ -6,16 +6,24 @@
 #include <utility>
 #include <algorithm>
 
-std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
+std::array<uint32_t, maxScreenWidth * maxScreenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
+
+void posiSetResolution(int width, int height) {
+	if(width < 0 || height < 0 || width > maxScreenWidth || height > maxScreenHeight) {
+		return;
+	}
+	if(width != 0) { screenWidth = width;}
+	if(height != 0) { screenHeight = height;}
+}
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return;
 	}
 	if(!(color&0xFF000000)) return;
-	frameBuffer[y * screenWidth + x] = color;
+	frameBuffer[y * maxScreenWidth + x] = color;
 }
 
 void posiAPICls(uint32_t color) {
@@ -31,7 +39,7 @@ uint32_t posiAPIGetPixel(int x, int y) {
 	if(x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return 0xFF000000;
 	}
-	return frameBuffer[y*screenWidth+x];
+	return frameBuffer[y*maxScreenWidth+x];
 }
 
 void posiAPIPutPixel(int x, int y, uint32_t color) {
@@ -95,7 +103,7 @@ void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
 }
 
 void posiRedraw(uint32_t* buffer) {	
-	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
+	memcpy(buffer, frameBuffer.data(),maxScreenHeight*maxScreenWidth*4);
 }
 
 void gpuInit() {
@@ -124,6 +132,8 @@ void loadTilemaps() {
 }
 
 void gpuClear() {
+	screenWidth = defaultScreenWidth;
+	screenHeight = defaultScreenHeight;
 	frameBuffer.fill(0);
 	tiles.fill(0);
 	for(int j = 0; j < numTilemaps; j++) {
@@ -234,10 +244,10 @@ void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int 
 }
 
 void posiAPIDrawLine(int x1, int y1, int x2,int y2, uint32_t color) {
-	x1 = std::clamp(x1,0,screenWidth-1);
-	y1 = std::clamp(y1,0,screenHeight-1);
-	x2 = std::clamp(x2,0,screenWidth-1);
-	y2 = std::clamp(y2,0,screenHeight-1);
+	//x1 = std::clamp(x1,0,screenWidth-1);
+	//y1 = std::clamp(y1,0,screenHeight-1);
+	//x2 = std::clamp(x2,0,screenWidth-1);
+	//y2 = std::clamp(y2,0,screenHeight-1);
 	
 	int dx = std::abs(x2 - x1);
     int dy = std::abs(y2 - y1);
@@ -267,10 +277,10 @@ void posiAPIDrawRect(int x1, int y1, int x2, int y2, uint32_t color) {
     int maxY = std::max(y1, y2);
 
     // Clamp the rectangle coordinates
-    minX = std::clamp(minX, 0, screenWidth - 1);
-    minY = std::clamp(minY, 0, screenHeight - 1);
-    maxX = std::clamp(maxX, 0, screenWidth - 1);
-    maxY = std::clamp(maxY, 0, screenHeight - 1);
+    //minX = std::clamp(minX, 0, screenWidth - 1);
+    //minY = std::clamp(minY, 0, screenHeight - 1);
+    //maxX = std::clamp(maxX, 0, screenWidth - 1);
+    //maxY = std::clamp(maxY, 0, screenHeight - 1);
 
     // Draw the four lines of the rectangle
     posiAPIDrawLine(minX, minY, maxX, minY, color); // Top
@@ -286,10 +296,10 @@ void posiAPIDrawFilledRect(int x1, int y1, int x2, int y2, uint32_t color) {
     int maxY = std::max(y1, y2);
 
     // Clamp the rectangle coordinates
-    minX = std::clamp(minX, 0, screenWidth - 1);
-    minY = std::clamp(minY, 0, screenHeight - 1);
-    maxX = std::clamp(maxX, 0, screenWidth - 1);
-    maxY = std::clamp(maxY, 0, screenHeight - 1);
+    //minX = std::clamp(minX, 0, screenWidth - 1);
+    //minY = std::clamp(minY, 0, screenHeight - 1);
+    //maxX = std::clamp(maxX, 0, screenWidth - 1);
+    //maxY = std::clamp(maxY, 0, screenHeight - 1);
 
     // Iterate through each row within the rectangle and draw a horizontal line
     for (int y = minY; y <= maxY; ++y) {
@@ -303,21 +313,15 @@ void posiAPIDrawCircle(int centerX, int centerY, int radius, uint32_t color) {
     int y = radius;
     int d = 3 - 2 * radius;
 
-    auto drawPixel = [&](int px, int py) {
-        int clampedX = std::clamp(px, 0, screenWidth - 1);
-        int clampedY = std::clamp(py, 0, screenHeight - 1);
-        posiAPIPutPixel(clampedX, clampedY, color);
-    };
-
     while (x <= y) {
-        drawPixel(centerX + x, centerY + y);
-        drawPixel(centerX - x, centerY + y);
-        drawPixel(centerX + x, centerY - y);
-        drawPixel(centerX - x, centerY - y);
-        drawPixel(centerX + y, centerY + x);
-        drawPixel(centerX - y, centerY + x);
-        drawPixel(centerX + y, centerY - x);
-        drawPixel(centerX - y, centerY - x);
+        posiAPIPutPixel(centerX + x, centerY + y, color);
+        posiAPIPutPixel(centerX - x, centerY + y, color);
+        posiAPIPutPixel(centerX + x, centerY - y, color);
+        posiAPIPutPixel(centerX - x, centerY - y, color);
+        posiAPIPutPixel(centerX + y, centerY + x, color);
+        posiAPIPutPixel(centerX - y, centerY + x, color);
+        posiAPIPutPixel(centerX + y, centerY - x, color);
+        posiAPIPutPixel(centerX - y, centerY - x, color);
 
         if (d < 0) {
             d = d + 4 * x + 6;
