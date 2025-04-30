@@ -9,8 +9,6 @@ std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 chipInterface chips[numAudioChannels];
 std::array<float, audioFramesPerTick> leftBuffer, rightBuffer;
 
-bool playing = false;
-
 int16_t* posiAudiofeed() {
 	return soundBuffer.data();
 }

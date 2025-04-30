@@ -872,6 +872,37 @@ bool luaReset() {
 	return luaLoad();	
 }
 
+bool luaCallInit() {
+	
+    int isfunc;
+
+    // Get the global function "API_Tick"
+    //lua_getglobal(L, "API_Tick");
+	
+	lua_getglobal(L, "API");
+    lua_getfield(L, -1, "init");
+
+    // Check if it's a function
+    isfunc = lua_isfunction(L, -1);
+    if (!isfunc) {
+        lua_pop(L, 2); // Pop the non-function value from the stack
+        return false;
+    }
+
+    // Call the function (no arguments) in protected mode (pcall)
+    int status = lua_pcall(L, 0, 0,error_handler_index); // 0 arguments, 0 expected return values, 0 error handler function
+
+    if (status != LUA_OK) {
+        printLuaError(L); // Call your Lua error printing function
+        return false;
+    }
+	// Pop the "Tick" function (or the non-function value) from the stack
+    lua_pop(L, 1);
+    // If lua_pcall returns LUA_OK, the function executed without errors
+
+    return true;
+}
+
 bool luaCallTick() {
 	
     int isfunc;
@@ -905,22 +936,19 @@ bool luaCallTick() {
     return true;
 }
 
-
-
 bool luaEvalMain(std::string code) {
     int status = luaL_loadbuffer(L, code.c_str(), code.size(), "main"); // Load the Lua code string
 
     if (status == LUA_OK) {
         // **--- Call lua_pcall with our custom error handler (msgh argument) ---**
         status = lua_pcall(L, 0, 0, error_handler_index);
-
-        
     }
 
     if (status != LUA_OK) {
         printLuaError(L); // Handle and print any Lua errors
         return false;
     } else {
+		luaCallInit();
         return true; // Code executed without errors
     }
 	

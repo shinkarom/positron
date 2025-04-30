@@ -96,7 +96,6 @@ int main(int argc, char *argv[])
 	
 	SDL_FRect texRect, winRect;
 	
-	
 	audioID = SDL_OpenAudioDevice(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, nullptr);
 	stream = SDL_CreateAudioStream(&spec, nullptr);
 	SDL_BindAudioStream(audioID, stream);
