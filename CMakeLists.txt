@@ -6,7 +6,11 @@ set(EXE_NAME ${PROJ_NAME})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
-include_directories(src)
+include_directories(
+	src
+	vendor/imgui
+	vendor/imgui/backends/
+	)
 
 set(SDL_SHARED ON)
 set(SDL_STATIC OFF)
@@ -54,9 +58,27 @@ add_library(libfmsynth STATIC
 )
 target_include_directories(libfmsynth PUBLIC vendor/libfmsynth/include)
 
-add_executable(${PROJ_NAME}
+add_library(thirdparty STATIC
 	src/thirdparty/sqlite3.c
 	src/thirdparty/miniz.c
+	src/thirdparty/gl.c
+	src/thirdparty/pathfind.cpp
+)
+
+target_include_directories(thirdparty PUBLIC
+	src/thirdparty
+)
+
+add_executable(${PROJ_NAME}
+	vendor/imgui/imgui.cpp
+	vendor/imgui/imgui_demo.cpp
+	vendor/imgui/imgui_draw.cpp
+	vendor/imgui/imgui_tables.cpp
+	vendor/imgui/imgui_widgets.cpp
+	vendor/imgui/backends/imgui_impl_sdl3.cpp
+	vendor/imgui/backends/imgui_impl_opengl3.cpp
+	vendor/imgui/misc/cpp/imgui_stdlib.cpp
+	src/thirdparty/ImGuiFileDialog.cpp
 	src/main.cpp
 	src/posi.cpp
 	src/gpu.cpp
@@ -67,7 +89,7 @@ add_executable(${PROJ_NAME}
 	src/chip.cpp
 )
 
-target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua libfmsynth)
+target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua libfmsynth thirdparty)
 
 set_target_properties(${PROJ_NAME} PROPERTIES
 	LINKER_LANGUAGE CXX

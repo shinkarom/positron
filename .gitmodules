@@ -4,3 +4,7 @@
 [submodule "vendor/libfmsynth"]
 	path = vendor/libfmsynth
 	url = https://github.com/Themaister/libfmsynth.git
+[submodule "vendor/imgui"]
+	path = vendor/imgui
+	url = git@github.com:ocornut/imgui.git
+	branch = docking
