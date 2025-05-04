@@ -6,24 +6,16 @@
 #include <utility>
 #include <algorithm>
 
-std::array<uint32_t, maxScreenWidth * maxScreenHeight> frameBuffer;
+std::array<uint32_t, screenWidth * screenHeight> frameBuffer;
 std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
-
-void posiSetResolution(int width, int height) {
-	if(width < 0 || height < 0 || width > maxScreenWidth || height > maxScreenHeight) {
-		return;
-	}
-	if(width != 0) { screenWidth = width;}
-	if(height != 0) { screenHeight = height;}
-}
 
 void posiPutPixel(int x, int y, uint32_t color) {
 	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return;
 	}
 	if(!(color&0xFF000000)) return;
-	frameBuffer[y * maxScreenWidth + x] = color;
+	frameBuffer[y * screenWidth + x] = color;
 }
 
 void posiAPICls(uint32_t color) {
@@ -39,7 +31,7 @@ uint32_t posiAPIGetPixel(int x, int y) {
 	if(x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
 		return 0xFF000000;
 	}
-	return frameBuffer[y*maxScreenWidth+x];
+	return frameBuffer[y*screenWidth+x];
 }
 
 void posiAPIPutPixel(int x, int y, uint32_t color) {
@@ -47,7 +39,7 @@ void posiAPIPutPixel(int x, int y, uint32_t color) {
 }
 
 
-uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y) {
+uint32_t gpuGetTilePagePixel(int pageNum, int x, int y) {
 	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
 		return 0xFF000000;
 	}
@@ -62,7 +54,7 @@ uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y) {
 	return tiles[pxAddress];
 }
 
-void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
+void gpuSetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
 	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
 		return;
 	}
@@ -77,7 +69,7 @@ void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
 	tiles[pxAddress] = color | 0xFF000000;
 }
 
-uint32_t posiAPIGetTilePixel(int tileNum, int x, int y) {
+uint32_t gpuGetTilePixel(int tileNum, int x, int y) {
 	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
 		return 0xFF000000;
 	}
@@ -90,7 +82,7 @@ uint32_t posiAPIGetTilePixel(int tileNum, int x, int y) {
 	
 }
 
-void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
+void gpuSetTilePixel(int tileNum, int x, int y, uint32_t color) {
 	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
 		return;
 	}
@@ -103,7 +95,7 @@ void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color) {
 }
 
 void posiRedraw(uint32_t* buffer) {	
-	memcpy(buffer, frameBuffer.data(),maxScreenHeight*maxScreenWidth*4);
+	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
 }
 
 void gpuInit() {
@@ -132,8 +124,6 @@ void loadTilemaps() {
 }
 
 void gpuClear() {
-	screenWidth = defaultScreenWidth;
-	screenHeight = defaultScreenHeight;
 	frameBuffer.fill(0);
 	tiles.fill(0);
 	for(int j = 0; j < numTilemaps; j++) {
@@ -369,18 +359,11 @@ void posiAPIDrawFilledCircle(int centerX, int centerY, int radius, uint32_t colo
 }
 
 void posiAPIDrawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) {
-    // Clamp the coordinates
-    int cX1 = std::clamp(x1, 0, screenWidth - 1);
-    int cY1 = std::clamp(y1, 0, screenHeight - 1);
-    int cX2 = std::clamp(x2, 0, screenWidth - 1);
-    int cY2 = std::clamp(y2, 0, screenHeight - 1);
-    int cX3 = std::clamp(x3, 0, screenWidth - 1);
-    int cY3 = std::clamp(y3, 0, screenHeight - 1);
 
     // Draw the three lines of the triangle
-    posiAPIDrawLine(cX1, cY1, cX2, cY2, color);
-    posiAPIDrawLine(cX2, cY2, cX3, cY3, color);
-    posiAPIDrawLine(cX3, cY3, cX1, cY1, color);
+    posiAPIDrawLine(x1, y1, x2, y2, color);
+    posiAPIDrawLine(x2, y2, x3, y3, color);
+    posiAPIDrawLine(x3, y3, x1, y1, color);
 }
 
 void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, uint32_t color) {

@@ -5,12 +5,8 @@
 #include <vector>
 #include <optional>
 
-constexpr auto maxScreenWidth = 256;
-constexpr auto maxScreenHeight = 256;
-constexpr auto defaultScreenWidth = 256;
-constexpr auto defaultScreenHeight = 256;
-extern int screenWidth;
-extern int screenHeight;
+constexpr auto screenWidth = 256;
+constexpr auto screenHeight = 256;
 constexpr auto audioSampleRate = 44100;
 constexpr auto audioFramesPerTick = audioSampleRate / 60;
 
@@ -27,8 +23,8 @@ constexpr auto tileRowSize = pixelRowSize * tileSide;
 constexpr auto numTilemaps = 32;
 constexpr auto tilemapWidthScreens = tileSide;
 constexpr auto tilemapHeightScreens = tileSide;
-constexpr auto tilemapScreenWidthTiles = maxScreenWidth / tileSide;
-constexpr auto tilemapScreenHeightTiles = maxScreenHeight / tileSide;
+constexpr auto tilemapScreenWidthTiles = screenWidth / tileSide;
+constexpr auto tilemapScreenHeightTiles = screenHeight / tileSide;
 constexpr auto tilemapScreenTotalTiles = tilemapScreenWidthTiles * tilemapScreenHeightTiles;
 constexpr auto tilemapTotalWidthTiles = tilemapScreenWidthTiles * tilemapWidthScreens;
 constexpr auto tilemapTotalHeightTiles = tilemapScreenHeightTiles * tilemapHeightScreens;
@@ -70,14 +66,13 @@ void gpuClear();
 void gpuReset();
 void posiRedraw(uint32_t* buffer);
 void posiPutPixel(int x, int y, uint32_t color);
-void posiSetResolution(int width, int height);
 void posiAPICls(uint32_t color);
 uint32_t posiAPIGetPixel(int x, int y);
 void posiAPIPutPixel(int x, int y, uint32_t color);
-uint32_t posiAPIGetTilePagePixel(int pageNum, int x, int y);
-void posiAPISetTilePagePixel(int pageNum, int x, int y, uint32_t color);
-uint32_t posiAPIGetTilePixel(int tileNum, int x, int y);
-void posiAPISetTilePixel(int tileNum, int x, int y, uint32_t color);
+uint32_t gpuGetTilePagePixel(int pageNum, int x, int y);
+void gpuSetTilePagePixel(int pageNum, int x, int y, uint32_t color);
+uint32_t gpuGetTilePixel(int tileNum, int x, int y);
+void gpuSetTilePixel(int tileNum, int x, int y, uint32_t color);
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert);
 void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y);
 void posiAPIDrawLine(int x1, int y1, int x2, int y2, uint32_t color);

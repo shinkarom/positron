@@ -86,12 +86,12 @@ int main(int argc, char *argv[])
 	
 	bool done = false;
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
-	window = SDL_CreateWindow("Positron", maxScreenWidth*3, maxScreenHeight*3, 
+	window = SDL_CreateWindow("Positron", screenWidth*3, screenHeight*3, 
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
-	SDL_SetWindowMinimumSize(window, maxScreenWidth, maxScreenHeight);
+	SDL_SetWindowMinimumSize(window, screenWidth, screenHeight);
 	renderer = SDL_CreateRenderer(window, nullptr);
-	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, maxScreenWidth, maxScreenHeight);
+	texture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STREAMING, screenWidth, screenHeight);
 	SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
 	
 	SDL_FRect texRect, winRect;
