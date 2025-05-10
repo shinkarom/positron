@@ -64,6 +64,7 @@ void gpuInit();
 void gpuLoad();
 void gpuClear();
 void gpuReset();
+uint32_t* gpuGetBuffer();
 void posiRedraw(uint32_t* buffer);
 void posiPutPixel(int x, int y, uint32_t color);
 void posiAPICls(uint32_t color);

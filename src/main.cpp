@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	posiPoweron();
 	
 	bool done = false;
-	if (!posiLoad(fileName)){
+	if (!posiSDLLoadFile(fileName)){
 		posiSDLDestroy();
 		return 1;
 	}

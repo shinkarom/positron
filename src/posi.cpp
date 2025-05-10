@@ -36,6 +36,7 @@ bool posiRun() {
 bool posiLoad(std::string fileName) {
 	dbDisconnect();
 	if(!dbTryConnect(fileName)) {
+		loadedFileName = "";
 		return false;
 	}
 	loadedFileName = fileName;

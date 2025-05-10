@@ -98,6 +98,10 @@ void posiRedraw(uint32_t* buffer) {
 	memcpy(buffer, frameBuffer.data(),screenHeight*screenWidth*4);
 }
 
+uint32_t* gpuGetBuffer() {
+	return frameBuffer.data();
+}
+
 void gpuInit() {
     gpuClear();
 }
