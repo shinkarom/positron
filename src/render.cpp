@@ -1,6 +1,11 @@
 #include "render.h"
 
 #include <SDL3/SDL.h>
+#include "gl.h"
+#include "imgui.h"
+#include "imgui_impl_sdl3.h"
+#include "imgui_impl_opengl3.h"
+#include "ImGuiFileDialog.h"
 
 #include "posi.h"
 
@@ -8,6 +13,9 @@ SDL_Window* window;
 SDL_Renderer* renderer;
 SDL_Texture* texture;
 SDL_Event event;
+SDL_GLContext gl_context;
+GLuint gameTexture;
+ImGuiIO io;
 constexpr auto msPerTick = 1000 / 60;
 uint64_t targetTime;
 
@@ -36,9 +44,48 @@ constexpr SDL_Scancode inputScancodes[numInputButtons] = {
 	SDL_SCANCODE_D,
 };
 
+void initOpenGL() {
+	gl_context = SDL_GL_CreateContext(window);
+	gladLoadGL(SDL_GL_GetProcAddress);
+	SDL_GL_MakeCurrent(window, gl_context);
+	SDL_GL_SetSwapInterval(1); 
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+
+	
+	glGenTextures(1, &gameTexture);
+	glBindTexture(GL_TEXTURE_2D, gameTexture);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, screenWidth, screenHeight,0, GL_BGRA, GL_UNSIGNED_BYTE, nullptr);
+}
+
+void destroyOpenGL() {
+	SDL_GL_DestroyContext(gl_context);
+}
+
+void initImGUI() {
+	ImGui::CreateContext();
+	io = ImGui::GetIO();
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	io.IniFilename = nullptr;
+	
+	ImGui_ImplSDL3_InitForOpenGL(window, gl_context);
+	ImGui_ImplOpenGL3_Init("#version 330");
+}
+
 void posiSDLInit() {
 	audioBuffer = posiAudiofeed();
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
+	
+	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+	
 	window = SDL_CreateWindow("Positron", screenWidth*3, screenHeight*3, 
 		SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
 	SDL_SetWindowPosition(window, SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED);
@@ -53,6 +100,9 @@ void posiSDLInit() {
 	
 	hasFullscreen = false;
 	isPaused = false;
+	
+	initOpenGL();
+	initImGUI();
 }
 
 bool posiSDLTick() {
@@ -83,7 +133,7 @@ bool posiSDLTick() {
 			}
 		}
 	}
-	if(!isPaused) {
+	if(!isPaused && !io.WantCaptureKeyboard) {
 		auto kbState = SDL_GetKeyboardState(nullptr);
 		for (int i = 0; i < numInputButtons; i++) {
 			posiUpdateButton(i, kbState[inputScancodes[i]]);
@@ -126,6 +176,14 @@ bool posiSDLTick() {
 	SDL_RenderClear(renderer);
 	SDL_RenderTexture(renderer, texture, &texRect, &winRect);
 	SDL_RenderPresent(renderer);
+	/*
+	ImGui::Render();
+	glViewport(0, 0, (int)io.DisplaySize.x, (int)io.DisplaySize.y);
+	glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
+    glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	SDL_GL_SwapWindow(window);
+	*/
 	return done;
 }
 
@@ -142,6 +200,12 @@ void posiSDLDestroy() {
 	
 	SDL_DestroyAudioStream(stream);
 	SDL_CloseAudioDevice(audioID);
+	
+	destroyOpenGL();
+	
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplSDL3_Shutdown();
+	ImGui::DestroyContext();
 	
 	SDL_DestroyTexture(texture);
 	SDL_DestroyRenderer(renderer);
