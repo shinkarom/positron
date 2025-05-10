@@ -87,6 +87,7 @@ add_executable(${PROJ_NAME}
 	src/script.cpp
 	src/apu.cpp
 	src/chip.cpp
+	src/render.cpp
 )
 
 target_link_libraries(${PROJ_NAME} SDL3::SDL3 lua libfmsynth thirdparty)
