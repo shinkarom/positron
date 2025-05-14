@@ -13,7 +13,7 @@ void posiPoweron() {
 	luaInit();
 	gpuInit();
 	apuInit();
-	gameState = POSI_STATE_GAME;
+	gameState = POSI_STATE_EMPTY;
 	loadedFileName = "";
 }
 
@@ -29,7 +29,7 @@ bool posiRun() {
 		case POSI_STATE_GAME: {}
 			return posiStateGameRun();
 		default:
-			return false;
+			return true;
 	}
 }
 
@@ -37,9 +37,11 @@ bool posiLoad(std::string fileName) {
 	dbDisconnect();
 	if(!dbTryConnect(fileName)) {
 		loadedFileName = "";
+		posiChangeState(POSI_STATE_EMPTY);
 		return false;
 	}
 	loadedFileName = fileName;
+	posiChangeState(POSI_STATE_GAME);
 	gpuLoad();
 	
 	return luaLoad();
@@ -53,12 +55,17 @@ bool posiReset() {
 
 void posiChangeState(int newState) {
 	switch(gameState) {
+		case POSI_STATE_EMPTY:
+			break;
 		case POSI_STATE_GAME:
 			break;
 		default:
 			break;
 	}
+	gameState = newState;
 	switch(newState) {
+		case POSI_STATE_EMPTY:
+			break;
 		case POSI_STATE_GAME:
 			break;
 		default:

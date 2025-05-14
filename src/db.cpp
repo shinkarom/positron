@@ -315,8 +315,8 @@ bool dbTryConnect(std::string fileName){
 	if(db) {
 		dbDisconnect();
 	}
-
-	if (sqlite3_open(fileName.c_str(), &db) != SQLITE_OK) {
+	auto flags = SQLITE_OPEN_READWRITE;
+	if (sqlite3_open_v2(fileName.c_str(), &db,flags, nullptr) != SQLITE_OK) {
         std::cout << "Failed to open database: " << sqlite3_errmsg(db) << std::endl;
         return false;
     } else {

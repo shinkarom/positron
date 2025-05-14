@@ -15,9 +15,9 @@
 int main(int argc, char *argv[])
 {
 	argparse::ArgumentParser program("Positron");
-	program.add_argument("file");
-		//.nargs(argparse::nargs_pattern::optional)
-		//.default_value(std::string(""));
+	program.add_argument("file")
+		.nargs(argparse::nargs_pattern::optional)
+		.default_value(std::string(""));
 	try {
 		program.parse_args(argc, argv);
 	  }
@@ -31,9 +31,9 @@ int main(int argc, char *argv[])
 	posiPoweron();
 	
 	bool done = false;
-	if (!posiSDLLoadFile(fileName)){
-		posiSDLDestroy();
-		return 1;
+	if (fileName!="" && !posiSDLLoadFile(fileName)){
+		//posiSDLDestroy();
+		//return 1;
 	}
 	
 	posiSDLInit();

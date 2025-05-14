@@ -36,6 +36,8 @@ constexpr auto numAudioChannels = 8;
 
 constexpr auto numSlots = 64;
 
+extern bool isFileLoaded;
+
 std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
 bool dbSlotSave(int number, std::vector<uint8_t>& value);
@@ -50,7 +52,7 @@ bool luaCallTick();
 bool luaReset();
 bool luaEvalMain(std::string code);
 
-enum PosiState {POSI_STATE_GAME};
+enum PosiState {POSI_STATE_EMPTY, POSI_STATE_GAME};
 
 void posiPoweron();
 void posiPoweroff();

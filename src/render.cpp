@@ -170,6 +170,8 @@ bool drawMenuBar(bool input) {
 		ImGuiFileDialog::Instance()->Close();
 		if(!success) {
 			isPaused = wasPaused;
+		} else {
+			isPaused = false;
 		}
 	  }
 	
