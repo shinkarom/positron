@@ -59,6 +59,7 @@ void posiPoweroff();
 bool posiRun();
 bool posiLoad(std::string fileName);
 bool posiReset();
+void posiUnload();
 int16_t* posiAudiofeed();
 void posiChangeState(int newState);
 

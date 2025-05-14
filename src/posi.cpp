@@ -26,18 +26,25 @@ void posiPoweroff() {
 bool posiRun() {
 	apuProcess();
 	switch(gameState) {
-		case POSI_STATE_GAME: {}
+		case POSI_STATE_EMPTY: {
+			posiAPICls(0xFF000000);
+			return true;
+		}
+		case POSI_STATE_GAME:
 			return posiStateGameRun();
 		default:
 			return true;
 	}
 }
 
-bool posiLoad(std::string fileName) {
+void posiUnload() {
 	dbDisconnect();
+	loadedFileName = "";
+	posiChangeState(POSI_STATE_EMPTY);
+}
+
+bool posiLoad(std::string fileName) {
 	if(!dbTryConnect(fileName)) {
-		loadedFileName = "";
-		posiChangeState(POSI_STATE_EMPTY);
 		return false;
 	}
 	loadedFileName = fileName;
@@ -74,7 +81,6 @@ void posiChangeState(int newState) {
 }
 
 bool posiStateGameRun() {
-	
 	return luaCallTick();
 }
 

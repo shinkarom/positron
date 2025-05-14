@@ -131,6 +131,9 @@ bool drawMenuBar(bool input) {
 			if (ImGui::MenuItem("Reload")) {
 				posiSDLLoadFile(filename);
 			}
+			if (ImGui::MenuItem("Unload")) {
+				posiUnload();
+			}
 			if (ImGui::MenuItem("Exit")) {
 				result = true;
 			}
