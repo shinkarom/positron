@@ -154,8 +154,11 @@ void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool f
 	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
 	auto tileRow = idRemainder / 16;
 	auto tileColumn = idRemainder % 16;
-	if(tileRow + w > 16 || tileColumn + h > 16){
-		return;
+	if(tileRow + w > 16){
+		w = 16 - tileRow;
+	}
+	if(tileColumn + h > 16) {
+		h = 16 - tileColumn;
 	}
 	for(auto yy = 0; yy < h*tileSide; yy++) {
 		auto posY = flipVert ? y + h * tileSide - yy : y+yy;
