@@ -193,23 +193,13 @@ static int lua_api_pixel(lua_State *L) {
         posiAPIPutPixel((int32_t)x, (int32_t)y, (uint32_t)color); // Call native C function
 
         return 0; // No return value to Lua
-    } else if (num_args == 2) {
-        if (!lua_isnumber(L, 1)) return luaL_argerror(L, 1, "x must be a number");
-        if (!lua_isnumber(L, 2)) return luaL_argerror(L, 2, "y must be a number");
-
-        x = luaL_checkinteger(L, 1);
-        y = luaL_checkinteger(L, 2);
-
-        uint32_t retrieved_color = posiAPIGetPixel((int32_t)x, (int32_t)y);
-        lua_pushinteger(L, (lua_Integer)retrieved_color); // Push the color value onto the Lua stack
-        return 1; // Return one value to Lua
     } else {
-        return luaL_error(L, "API_putPixel expects 2 or 3 arguments: x, y, [color].");
+        return luaL_error(L, "API_drawPixel expects 3 arguments: x, y, color.");
     }
 }
 
 // Lua C function for the posiAPITilePagePixel pair
-static int l_posiAPITilePagePixel(lua_State *L) {
+static int l_posiAPIGetTilePagePixel(lua_State *L) {
   int n = lua_gettop(L);
 
   if (n == 3) {
@@ -222,7 +212,15 @@ static int l_posiAPITilePagePixel(lua_State *L) {
     uint32_t result = gpuGetTilePagePixel(pageNum, x, y);
     lua_pushinteger(L, result);
     return 1;
-  } else if (n == 4) {
+  } else {
+    return luaL_error(L, "Wrong number of arguments for posiAPIGetTilePagePixel. Expected 3, got %d", n);
+  }
+}
+
+static int l_posiAPISetTilePagePixel(lua_State *L) {
+  int n = lua_gettop(L);
+
+  if (n == 4) {
     if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
       return luaL_error(L, "Expected four integer arguments for posiAPITilePagePixel (set)");
     }
@@ -233,12 +231,12 @@ static int l_posiAPITilePagePixel(lua_State *L) {
     gpuSetTilePagePixel(pageNum, x, y, color);
     return 0;
   } else {
-    return luaL_error(L, "Wrong number of arguments for posiAPITilePagePixel. Expected 3 (get) or 4 (set), got %d", n);
+    return luaL_error(L, "Wrong number of arguments for posiAPISetTilePagePixel. Expected 4, got %d", n);
   }
 }
 
 // Lua C function for the posiAPITilePixel pair
-static int l_posiAPITilePixel(lua_State *L) {
+static int l_posiAPIGetTilePixel(lua_State *L) {
   int n = lua_gettop(L);
 
   if (n == 3) {
@@ -251,7 +249,15 @@ static int l_posiAPITilePixel(lua_State *L) {
     uint32_t result = gpuGetTilePixel(tileNum, x, y);
     lua_pushinteger(L, result);
     return 1;
-  } else if (n == 4) {
+  } else {
+    return luaL_error(L, "Wrong number of arguments for posiAPIGetTilePixel. Expected 3, got %d", n);
+  }
+}
+
+static int l_posiAPISetTilePixel(lua_State *L) {
+  int n = lua_gettop(L);
+
+  if (n == 4) {
     if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
       return luaL_error(L, "Expected four integer arguments for posiAPITilePixel (set)");
     }
@@ -262,7 +268,7 @@ static int l_posiAPITilePixel(lua_State *L) {
     gpuSetTilePixel(tileNum, x, y, color);
     return 0;
   } else {
-    return luaL_error(L, "Wrong number of arguments for posiAPITilePixel. Expected 3 (get) or 4 (set), got %d", n);
+    return luaL_error(L, "Wrong number of arguments for posiAPISetTilePixel. Expected 4, got %d", n);
   }
 }
 
@@ -463,7 +469,7 @@ static int lua_posiAPIDrawText(lua_State *L) {
     return 1;
 }
 
-static int l_posiAPITilemapEntry(lua_State *L) {
+static int l_posiAPIGetTilemapEntry(lua_State *L) {
   int num_args = lua_gettop(L);
 
   if (num_args == 3) {
@@ -476,7 +482,16 @@ static int l_posiAPITilemapEntry(lua_State *L) {
     lua_pushinteger(L, (lua_Integer)result);
     return 1; // Return 1 value (the tilemap entry)
 
-  } else if (num_args == 4) {
+  } else {
+    // Incorrect number of arguments
+    return luaL_error(L, "API_getTilemapEntry: Incorrect number of arguments.");
+  }
+}
+
+static int l_posiAPISetTilemapEntry(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 4) {
     
     int tilemapNum = luaL_checkinteger(L, 1);
     int tmx = luaL_checkinteger(L, 2);
@@ -488,11 +503,30 @@ static int l_posiAPITilemapEntry(lua_State *L) {
 
   } else {
     // Incorrect number of arguments
-    return luaL_error(L, "API_tilemapEntry: Incorrect number of arguments.");
+    return luaL_error(L, "API_setTilemapEntry: Incorrect number of arguments.");
   }
 }
 
-static int l_posiAPIOperatorParameter(lua_State *L) {
+static int l_posiAPIGetOperatorParameter(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 3) {
+    // Getter: channelNumber, operatorNumber, parameter
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t operatorNumber = (uint8_t)luaL_checkinteger(L, 2);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 3);
+
+    float result = posiAPIGetOperatorParameter(channelNumber, operatorNumber, parameter);
+    lua_pushnumber(L, (lua_Number)result);
+    return 1; // One return value
+  } else {
+    // Invalid number of arguments
+    luaL_error(L, "Wrong number of arguments. Expected 3.");
+    return 0; // Should not reach here
+  }
+}
+
+static int l_posiAPISetOperatorParameter(lua_State *L) {
   int num_args = lua_gettop(L);
 
   if (num_args == 4) {
@@ -504,24 +538,33 @@ static int l_posiAPIOperatorParameter(lua_State *L) {
 
     posiAPISetOperatorParameter(channelNumber, operatorNumber, parameter, value);
     return 0; // No return values
-  } else if (num_args == 3) {
-    // Getter: channelNumber, operatorNumber, parameter
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t operatorNumber = (uint8_t)luaL_checkinteger(L, 2);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 3);
-
-    float result = posiAPIGetOperatorParameter(channelNumber, operatorNumber, parameter);
-    lua_pushnumber(L, (lua_Number)result);
-    return 1; // One return value
   } else {
     // Invalid number of arguments
-    luaL_error(L, "Wrong number of arguments. Expected 3 (get) or 4 (set).");
+    luaL_error(L, "Wrong number of arguments. Expected 4.");
     return 0; // Should not reach here
   }
 }
 
 // Combined Lua binding for setting or getting global parameter
-static int l_posiAPIGlobalParameter(lua_State *L) {
+static int l_posiAPIGetGlobalParameter(lua_State *L) {
+  int num_args = lua_gettop(L);
+
+  if (num_args == 2) {
+    // Getter: channelNumber, parameter
+    int channelNumber = luaL_checkinteger(L, 1);
+    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
+
+    float result = posiAPIGetGlobalParameter(channelNumber, parameter);
+    lua_pushnumber(L, (lua_Number)result);
+    return 1; // One return value
+  } else {
+    // Invalid number of arguments
+    luaL_error(L, "Wrong number of arguments. Expected 2.");
+    return 0; // Should not reach here
+  }
+}
+
+static int l_posiAPISetGlobalParameter(lua_State *L) {
   int num_args = lua_gettop(L);
 
   if (num_args == 3) {
@@ -532,17 +575,9 @@ static int l_posiAPIGlobalParameter(lua_State *L) {
 
     posiAPISetGlobalParameter(channelNumber, parameter, value);
     return 0; // No return values
-  } else if (num_args == 2) {
-    // Getter: channelNumber, parameter
-    int channelNumber = luaL_checkinteger(L, 1);
-    uint8_t parameter = (uint8_t)luaL_checkinteger(L, 2);
-
-    float result = posiAPIGetGlobalParameter(channelNumber, parameter);
-    lua_pushnumber(L, (lua_Number)result);
-    return 1; // One return value
   } else {
     // Invalid number of arguments
-    luaL_error(L, "Wrong number of arguments. Expected 2 (get) or 3 (set).");
+    luaL_error(L, "Wrong number of arguments. Expected 3.");
     return 0; // Should not reach here
   }
 }
@@ -722,9 +757,11 @@ static const struct luaL_Reg api_funcs[] = {
     {"isPressed", lua_api_isPressed},
     {"isJustPressed", lua_api_isJustPressed},
     {"isJustReleased", lua_api_isJustReleased},
-    {"pixel", lua_api_pixel},
-	{"tilePagePixel",l_posiAPITilePagePixel},
-	{"tilePixel",l_posiAPITilePixel},
+    {"drawPixel", lua_api_pixel},
+	{"getTilePagePixel",l_posiAPIGetTilePagePixel},
+	{"setTilePagePixel",l_posiAPISetTilePagePixel},
+	{"getTilePixel",l_posiAPIGetTilePixel},
+	{"setTilePixel",l_posiAPISetTilePixel},
     {"drawSprite", lua_api_drawSprite},
     {"drawTilemap", l_posiAPIDrawTilemap},
 	{"drawLine", l_posiAPIDrawLine},
@@ -735,9 +772,12 @@ static const struct luaL_Reg api_funcs[] = {
 	{"drawCircle", l_posiAPIDrawCircle},
 	{"drawFilledCircle", l_posiAPIDrawFilledCircle},
 	{"drawText", lua_posiAPIDrawText},
-    {"tilemapEntry", l_posiAPITilemapEntry},
-    {"operatorParameter", l_posiAPIOperatorParameter},
-    {"globalParameter", l_posiAPIGlobalParameter},
+    {"getTilemapEntry", l_posiAPIGetTilemapEntry},
+	{"setTilemapEntry", l_posiAPISetTilemapEntry},
+    {"getOperatorParameter", l_posiAPIGetOperatorParameter},
+	{"setOperatorParameter", l_posiAPISetOperatorParameter},
+    {"getGlobalParameter", l_posiAPIGetGlobalParameter},
+	{"setGlobalParameter", l_posiAPISetGlobalParameter},
     {"noteOn", l_posiAPINoteOn},
     {"noteOff", l_posiAPINoteOff},
     {"setSustain", l_posiAPISetSustain},
