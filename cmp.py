@@ -47,11 +47,6 @@ def apply_schema(conn):
                 compressed INTEGER NOT NULL,
                 CONSTRAINT un UNIQUE (name, type)
             );
-            CREATE TABLE IF NOT EXISTS saves (
-                number INTEGER PRIMARY KEY,
-                data BLOB,
-                compressed INTEGER NOT NULL
-            )
             """
             cursor.executescript(schema)
             print("Database schema applied (including 'files' table).")

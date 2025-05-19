@@ -134,13 +134,14 @@ bool posiAPIIsSlotPresent(int slotNum) {
 	if(slotNum<0 ||slotNum>=numSlots) {
 		return false;
 	}
+	auto r = std::format("{:02X}", slotNum);
 	sqlite3_stmt* stmt;
-	std::string query = "select 1 from saves where number=?";
+	std::string query = "select 1 from data where type='save' and name=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
 	} 
-	sqlite3_bind_int(stmt, 1, slotNum);
+	sqlite3_bind_text(stmt, 1, r.c_str(), -1, nullptr);
 
 	if(sqlite3_step(stmt) != SQLITE_ROW) {
 		return false;
@@ -155,12 +156,13 @@ bool posiAPISlotDelete(int slotNum) {
 		return false;
 	}
 	sqlite3_stmt* stmt;
-	std::string query = "delete from saves where number=?";
+	auto r = std::format("{:02X}", slotNum);
+	std::string query = "delete from data where type='save' and name=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
 	} 
-	sqlite3_bind_int(stmt, 1, slotNum);
+	sqlite3_bind_text(stmt, 1, r.c_str(), -1, nullptr);
 
 	if(sqlite3_step(stmt) != SQLITE_DONE) {
 		return false;
@@ -171,7 +173,7 @@ bool posiAPISlotDelete(int slotNum) {
 
 bool posiAPISlotDeleteAll() {
 	sqlite3_stmt* stmt;
-	std::string query = "delete from saves";
+	std::string query = "delete from data where type='save'";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
@@ -205,7 +207,7 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
     sqlite3_stmt* stmt = nullptr; // Initialize statement pointer to nullptr
     // Using REPLACE INTO simplifies the logic; it acts as an INSERT if the 'number'
     // does not exist, or an UPDATE if it does.
-    std::string query = "REPLACE INTO saves (number, data, compressed) VALUES (?, ?, ?)";
+    std::string query = "REPLACE INTO data (type, name, data, compressed) VALUES ('save', ?, ?, ?)";
 
     // Prepare the SQL statement.
     if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -217,8 +219,9 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
 
     // 3. Bind the values to the prepared statement's parameters.
     // Bind the save slot number (INTEGER) to the first parameter (index 1).
-    if (sqlite3_bind_int(stmt, 1, number) != SQLITE_OK) {
-        std::cerr << "SQLite bind_int error for dbSlotSave (" << number << ", number): " << sqlite3_errmsg(db) << std::endl;
+	auto r = std::format("{:02X}", number);
+    if (sqlite3_bind_text(stmt, 1, r.c_str(),-1,nullptr) != SQLITE_OK) {
+        std::cerr << "SQLite bind_text error for dbSlotSave (" << number << ", number): " << sqlite3_errmsg(db) << std::endl;
         sqlite3_finalize(stmt); // Finalize statement before returning on error
         return false;
     }
@@ -263,33 +266,7 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
 
 std::optional<std::vector<uint8_t>> dbSlotLoad(int number) {
 	if(number < 0 || number >= numSlots || !posiAPIIsSlotPresent(number)) return std::nullopt;
-	
-	sqlite3_stmt* stmt;
-	std::string query = "select data, compressed from saves where number=? ";
-	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
-		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
-		return std::nullopt;
-	} 
-	sqlite3_bind_int(stmt, 1, number);
-
-	if(sqlite3_step(stmt) != SQLITE_ROW) {
-		return std::nullopt;
-	}
-	
-	const void* blobData = sqlite3_column_blob(stmt, 0);
-    int blobSize = sqlite3_column_bytes(stmt, 0);
-    bool isCompressed = sqlite3_column_int(stmt, 1);
-	
-	std::vector<uint8_t> storedData(static_cast<const uint8_t*>(blobData), 
-                                        static_cast<const uint8_t*>(blobData) + blobSize);
-	
-	sqlite3_finalize(stmt);
-	
-	if(isCompressed) {
-		return decompress(storedData) ;
-	} else {
-		return storedData;
-	}	
+	return dbLoadByNumber("save", number);
 }
 
 bool dbVacuum() {

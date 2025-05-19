@@ -150,6 +150,9 @@ bool drawMenuBar(bool input) {
 				posiSDLLoadFile(filename);
 				
 			}
+			if (ImGui::MenuItem("Clear Saves", nullptr, false)) {
+				posiAPISlotDeleteAll();
+			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();
@@ -185,9 +188,6 @@ bool posiSDLTick() {
 		} else if (event.type == SDL_EVENT_KEY_DOWN) {
 			
 		} else if (event.type == SDL_EVENT_KEY_UP) {
-			if(event.key.scancode == SDL_SCANCODE_F9) {
-				posiAPISlotDeleteAll();
-			}
 			if(event.key.scancode == SDL_SCANCODE_F10) {
 				if(!posiReset()){
 					done = true;
