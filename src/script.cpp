@@ -587,18 +587,13 @@ static int l_posiAPINoteOff(lua_State *L) {
   int num_args = lua_gettop(L);
   int channelNumber = luaL_checkinteger(L, 1);
 
-  if (num_args == 2) {
-    // Note Off: channelNumber, note
-    uint8_t note = (uint8_t)luaL_checkinteger(L, 2);
-    posiAPINoteOff(channelNumber, note);
-    return 0;
-  } else if (num_args == 1) {
+  if (num_args == 1) {
     // Release All: channelNumber
-    posiAPIReleaseAll(channelNumber);
+    posiAPINoteOff(channelNumber);
     return 0;
   } else {
     // Invalid number of arguments
-    luaL_error(L, "Wrong number of arguments. Expected 1 (releaseAll) or 2 (noteOff).");
+    luaL_error(L, "Wrong number of arguments. Expected 1.");
     return 0; // Should not reach here
   }
 }
