@@ -128,9 +128,6 @@ bool drawMenuBar(bool input) {
 				ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlgKey", "Open File", ".posi", config);
 				// Open file action
 			}
-			if (ImGui::MenuItem("Reload")) {
-				posiSDLLoadFile(filename);
-			}
 			if (ImGui::MenuItem("Unload")) {
 				posiUnload();
 			}
@@ -150,9 +147,7 @@ bool drawMenuBar(bool input) {
 				isPaused = !isPaused;
 			}
 			if (ImGui::MenuItem("Reset", nullptr, false)) {
-				if(isFileLoaded) {
-					//core::reset();
-				}
+				posiSDLLoadFile(filename);
 				
 			}
 			ImGui::EndMenu();
