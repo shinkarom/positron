@@ -15,21 +15,18 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Create an SQLite database with a defined schema.")
     parser.add_argument("input_directory", help="The input directory containing 'code', 'tiles', and 'tilemap' subfolders.")
     parser.add_argument("database_name", help="The name of the SQLite database file to create.")
-    parser.add_argument("-c",
-                        help="Optional: The directory to store cached processed files. Defaults to a '.build_cache' folder inside input_directory.",
-                        default=None)
     return parser.parse_args()
 
 def create_database_connection(database_name):
     """Creates and returns a connection to the SQLite database, replacing existing if present."""
     db_path = os.path.join(os.getcwd(), database_name)
-    if os.path.exists(db_path):
-        try:
-            os.remove(db_path)
-            print(f"Existing SQLite database '{database_name}' has been replaced.")
-        except OSError as e:
-            print(f"Error removing existing database '{database_name}': {e}")
-            return None
+   # if os.path.exists(db_path):
+   #     try:
+   #         os.remove(db_path)
+   #         print(f"Existing SQLite database '{database_name}' has been replaced.")
+   #     except OSError as e:
+   #         print(f"Error removing existing database '{database_name}': {e}")
+   #         return None
     try:
         conn = sqlite3.connect(db_path, isolation_level=None)
         print(f"SQLite database '{database_name}' created or opened successfully.")
@@ -95,36 +92,20 @@ def insert_data(conn, data, name, type, is_compressed):
     """
     try:
         cursor = conn.cursor()
-        cursor.execute("INSERT INTO data (name, type, data, compressed) VALUES (?, ?, ?, ?)",
+        cursor.execute("INSERT OR REPLACE INTO data (name, type, data, compressed) VALUES (?, ?, ?, ?)",
                        (name, type, sqlite3.Binary(data), is_compressed))
         conn.commit()
         print(f"'{type}' | '{name}' | {len(data)} | {is_compressed}")
     except sqlite3.Error as e:
         print(f"An error occurred while inserting data '{name}': {e}")
 
-def _process_generic_files(conn, input_directory, subfolder, file_filter_logic, cache_extension, db_type, process_logic, cache_dir=None):
-    """
-    Generic function to process files in a subfolder, handle caching, and insert into the database.
-
-    Args:
-        conn (sqlite3.Connection): The database connection object.
-        input_directory (str): The path to the main input directory.
-        subfolder (str): The name of the subfolder (e.g., "code", "tiles", "tilemap").
-        file_filter_logic (callable): A function that takes a filename (str) and returns True if it should be processed, False otherwise.
-        cache_extension (str): The extension for cached files (e.g., ".code", ".tiles").
-        db_type (str): The type string to store in the database (e.g., "code", "tiles").
-        process_logic (callable): A function that takes the file path and returns the raw content
-                                  (bytes or bytearray) to be compressed and inserted.
-        cache_dir (str, optional): The directory to store cached processed files.
-    """
-    target_directory = os.path.join(input_directory, subfolder)
-    if not os.path.isdir(target_directory):
+def _process_generic_files(conn, input_directory, subfolder, file_filter_logic, cache_extension, db_type, process_logic,db_mtime):
+    target_directory = Path(input_directory, subfolder)
+    if not target_directory.is_dir():
         print(f"Warning: '{subfolder}' subfolder not found in '{input_directory}'. Skipping {db_type} file processing.")
-        return
-
-    # Ensure cache directory exists if it's being used
-    if cache_dir:
-        os.makedirs(cache_dir, exist_ok=True)
+        return set()
+    
+    processed_entries = set()
 
     for filename in os.listdir(target_directory):
         # Use the passed file_filter_logic here
@@ -132,37 +113,27 @@ def _process_generic_files(conn, input_directory, subfolder, file_filter_logic, 
             filepath = Path(target_directory, filename)
             # Use filepath.stem for robustness, handles cases like .tar.gz
             name_without_extension = filepath.stem
-            
-            p_cache = None
-            if cache_dir:
-                p_cache = Path(cache_dir, f"{name_without_extension}.{cache_extension}")
 
             compressed_data = None
             is_compressed = None
 
             try:
-                # Check cache first
-                if p_cache and p_cache.is_file() and (filepath.stat().st_mtime_ns <= p_cache.stat().st_mtime_ns):
-                    with open(p_cache, "rb") as s:
-                        is_compressed = s.read(1) == b'\x01'
-                        compressed_data = s.read()
-                else:
+                cursor = conn.cursor()
+                cursor.execute("SELECT 1 FROM data WHERE name = ? AND type = ?", (name_without_extension, db_type))
+                db_entry_exists = cursor.fetchone() is not None
+
+                if (filepath.stat().st_mtime_ns > db_mtime) or (not db_entry_exists):                   
                     raw_content = process_logic(filepath)
                     compressed_data, is_compressed = cond_compress_data(raw_content)
-                    if p_cache: # Write to cache only if cache_dir was provided
-                        with open(p_cache, "wb") as s:
-                            s.write(b'\x01' if is_compressed else b'\x00')
-                            s.write(compressed_data)
-                    
-
-                # Insert data into database
-                if compressed_data is not None and is_compressed is not None:
-                    insert_data(conn, compressed_data, name_without_extension, db_type, is_compressed)
-
+                    insert_data(conn, compressed_data, name_without_extension, db_type, is_compressed)                    
+            
+                processed_entries.add((name_without_extension, db_type))
+            
             except FileNotFoundError:
                 print(f"Error: File not found: {filepath}")
             except Exception as e:
                 print(f"Error processing {db_type} file '{filename}': {e}")
+    return processed_entries
 
 def filter_by_extension(extension):
     """Returns a filter function that checks if a filename ends with the given extension."""
@@ -242,10 +213,13 @@ def _process_tilemap_content(filepath):
 if __name__ == "__main__":
     args = parse_arguments()
     t = time.time()
-    database_connection = create_database_connection(args.database_name)
+    pat = Path(args.database_name)
+    database_connection = create_database_connection(pat)
     if database_connection:
+        mtime = pat.stat().st_mtime_ns
         apply_schema(database_connection)
-        _process_generic_files(
+        all_processed_entries = set()
+        all_processed_entries.update(_process_generic_files(
             database_connection,
             args.input_directory,
             subfolder="code",
@@ -253,9 +227,9 @@ if __name__ == "__main__":
             cache_extension="code",
             db_type="code",
             process_logic=_process_lua_content,
-            cache_dir=args.c
-        )
-        _process_generic_files(
+            db_mtime = mtime,
+        ))
+        all_processed_entries.update(_process_generic_files(
             database_connection,
             args.input_directory,
             subfolder="tiles",
@@ -263,9 +237,9 @@ if __name__ == "__main__":
             cache_extension="tiles",
             db_type="tiles",
             process_logic=_process_tile_image_content,
-            cache_dir=args.c
-        )
-        _process_generic_files(
+            db_mtime = mtime,
+        ))
+        all_processed_entries.update(_process_generic_files(
             database_connection,
             args.input_directory,
             subfolder="tilemap",
@@ -273,8 +247,22 @@ if __name__ == "__main__":
             cache_extension="tilemap",
             db_type="tilemap",
             process_logic=_process_tilemap_content,
-            cache_dir=args.c
-        )
+            db_mtime = mtime,
+        ))
+        cursor = database_connection.cursor()
+        cursor.execute("SELECT name, type FROM data;")
+        all_db_entries = set(cursor.fetchall())
+        obsolete_entries = all_db_entries - all_processed_entries
+        if obsolete_entries:
+            for name, type in obsolete_entries:
+                try:
+                    cursor.execute("DELETE FROM data WHERE name = ? AND type = ?", (name, type))
+                    database_connection.commit()
+                    print(f"Removed obsolete entry: Type='{type}', Name='{name}' from database.")
+                except sqlite3.Error as e:
+                    print(f"Error removing obsolete entry '{name}' ({type}): {e}")
+            database_connection.commit() # Commit deletions
+        
         database_connection.close()
     tt = time.time()
     print(f"Done in {tt-t} seconds")
