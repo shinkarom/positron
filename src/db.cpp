@@ -136,7 +136,7 @@ bool posiAPIIsSlotPresent(int slotNum) {
 	}
 	auto r = std::format("{:02X}", slotNum);
 	sqlite3_stmt* stmt;
-	std::string query = "select 1 from data where type='save' and name=?";
+	std::string query = "select 1 from saves where name=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
@@ -157,7 +157,7 @@ bool posiAPISlotDelete(int slotNum) {
 	}
 	sqlite3_stmt* stmt;
 	auto r = std::format("{:02X}", slotNum);
-	std::string query = "delete from data where type='save' and name=?";
+	std::string query = "delete from saves where name=?";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
@@ -173,7 +173,7 @@ bool posiAPISlotDelete(int slotNum) {
 
 bool posiAPISlotDeleteAll() {
 	sqlite3_stmt* stmt;
-	std::string query = "delete from data where type='save'";
+	std::string query = "delete from saves";
 	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
 		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
 		return false;
@@ -207,7 +207,7 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
     sqlite3_stmt* stmt = nullptr; // Initialize statement pointer to nullptr
     // Using REPLACE INTO simplifies the logic; it acts as an INSERT if the 'number'
     // does not exist, or an UPDATE if it does.
-    std::string query = "REPLACE INTO data (type, name, data, compressed) VALUES ('save', ?, ?, ?)";
+    std::string query = "REPLACE INTO saves (name, data, compressed) VALUES (?, ?, ?)";
 
     // Prepare the SQL statement.
     if (sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
@@ -266,7 +266,33 @@ bool dbSlotSave(int number, std::vector<uint8_t>& value) {
 
 std::optional<std::vector<uint8_t>> dbSlotLoad(int number) {
 	if(number < 0 || number >= numSlots || !posiAPIIsSlotPresent(number)) return std::nullopt;
-	return dbLoadByNumber("save", number);
+	sqlite3_stmt* stmt;
+	std::string query = "select data, compressed from saves where name=?";
+	if(sqlite3_prepare_v2(db, query.c_str(), -1, &stmt, nullptr) != SQLITE_OK) {
+		std::cout<<"SQLite error: "<<sqlite3_errmsg(db)<<std::endl;
+		return std::nullopt;
+	} 
+	auto r = std::format("{:02X}", number);
+	sqlite3_bind_text(stmt, 1, r.c_str(),-1, nullptr);
+
+	if(sqlite3_step(stmt) != SQLITE_ROW) {
+		return std::nullopt;
+	}
+	
+	const void* blobData = sqlite3_column_blob(stmt, 0);
+    int blobSize = sqlite3_column_bytes(stmt, 0);
+    bool isCompressed = sqlite3_column_int(stmt, 1);
+	
+	std::vector<uint8_t> storedData(static_cast<const uint8_t*>(blobData), 
+                                        static_cast<const uint8_t*>(blobData) + blobSize);
+	
+	sqlite3_finalize(stmt);
+	
+	if(isCompressed) {
+		return decompress(storedData) ;
+	} else {
+		return storedData;
+	}
 }
 
 bool dbVacuum() {

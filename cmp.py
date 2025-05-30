@@ -48,6 +48,11 @@ def apply_schema(conn):
                 compressed INTEGER NOT NULL,
                 CONSTRAINT un UNIQUE (name, type)
             );
+            CREATE TABLE IF NOT EXISTS saves (
+                name TEXT UNIQUE NOT NULL,
+                data BLOB,
+                compressed INTEGER NOT NULL
+            );
             """
             cursor.executescript(schema)
             print("Database schema applied.")
