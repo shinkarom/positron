@@ -886,69 +886,64 @@ bool luaReset() {
 	return luaLoad();	
 }
 
-bool luaCallInit() {
-	
-    int isfunc;
-
-    // Get the global function "API_Tick"
-    //lua_getglobal(L, "API_Tick");
-	
-	lua_getglobal(L, "API");
-    lua_getfield(L, -1, "init");
-
-    // Check if it's a function
-    isfunc = lua_isfunction(L, -1);
-    if (!isfunc) {
-        lua_pop(L, 2); // Pop the non-function value from the stack
+static bool luaCallApiFunction(lua_State *L, const char* functionName, bool isMandatory) {
+    // Get the global "API" table
+    lua_getglobal(L, "API");
+    if (!lua_istable(L, -1)) {
+        // If the API table itself is missing, that's always a fatal error.
+        fprintf(stderr, "Error: Global 'API' table not found.\n");
+        lua_pop(L, 1); // Pop the non-table value
         return false;
     }
 
-    // Call the function (no arguments) in protected mode (pcall)
-    int status = lua_pcall(L, 0, 0,error_handler_index); // 0 arguments, 0 expected return values, 0 error handler function
+    // Get the function from the table. Stack is now: [..., API_table, field_value]
+    lua_getfield(L, -1, functionName);
+
+    // Check if the field is actually a function
+    if (!lua_isfunction(L, -1)) {
+        lua_pop(L, 2); // Pop the non-function value and the API table
+
+        if (isMandatory) {
+            // If it's mandatory, report an error and return failure.
+            fprintf(stderr, "Error: Required function API.%s() is not defined in the Lua script.\n", functionName);
+            return false;
+        } else {
+            // If it's optional, this is not an error. Silently succeed.
+            return true;
+        }
+    }
+
+    // We have a function, now call it in protected mode.
+    // Assumes error_handler_index is valid and on the stack.
+    // Or, if using the registry method:
+    // lua_rawgeti(L, LUA_REGISTRYINDEX, errorHandlerRef);
+    // lua_insert(L, -2);
+    // int status = lua_pcall(L, 0, 0, -2);
+
+    int status = lua_pcall(L, 0, 0, error_handler_index);
 
     if (status != LUA_OK) {
-        printLuaError(L); // Call your Lua error printing function
+        printLuaError(L); // Assumes this function pops the error message
+        lua_pop(L, 1); // Pop the API table
         return false;
     }
-	// Pop the "Tick" function (or the non-function value) from the stack
-    lua_pop(L, 1);
-    // If lua_pcall returns LUA_OK, the function executed without errors
 
+    // pcall pops the function. We just need to pop the API table from the stack.
+    lua_pop(L, 1);
     return true;
+}
+
+// Rewritten public functions using the helper
+bool luaCallInit() {
+    // init is not mandatory
+    return luaCallApiFunction(L, "init", false);
 }
 
 bool luaCallTick() {
-	
-    int isfunc;
-
-    // Get the global function "API_Tick"
-    //lua_getglobal(L, "API_Tick");
-	
-	lua_getglobal(L, "API");
-    // Get the "Tick" function from the API table
-    lua_getfield(L, -1, "tick");
-
-    // Check if it's a function
-    isfunc = lua_isfunction(L, -1);
-    if (!isfunc) {
-        fprintf(stderr, "Error: API.tick() is not defined in the Lua script.\n");
-        lua_pop(L, 2); // Pop the non-function value from the stack
-        return false;
-    }
-
-    // Call the function (no arguments) in protected mode (pcall)
-    int status = lua_pcall(L, 0, 0,error_handler_index); // 0 arguments, 0 expected return values, 0 error handler function
-
-    if (status != LUA_OK) {
-        printLuaError(L); // Call your Lua error printing function
-        return false;
-    }
-	// Pop the "Tick" function (or the non-function value) from the stack
-    lua_pop(L, 1);
-    // If lua_pcall returns LUA_OK, the function executed without errors
-
-    return true;
+    // tick is mandatory
+    return luaCallApiFunction(L, "tick", true);
 }
+
 
 bool luaEvalMain(std::string code) {
     int status = luaL_loadbuffer(L, code.c_str(), code.size(), "main"); // Load the Lua code string
