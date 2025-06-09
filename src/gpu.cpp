@@ -145,40 +145,66 @@ void gpuLoad() {
 	loadTilemaps();
 }
 
+static constexpr int PAGE_GRID_WIDTH = 16; 
+static constexpr int PAGE_GRID_HEIGHT = 16; 
+
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert) {
-	if(id < 0 || id > numTiles || w < 1 || h < 1 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
-		return;
-	}
-	auto pageNum = id / tilesPerPage;
-	auto idRemainder = id % tilesPerPage;
-	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto tileRow = idRemainder / 16;
-	auto tileColumn = idRemainder % 16;
-	if(tileRow + w > 16){
-		w = 16 - tileRow;
-	}
-	if(tileColumn + h > 16) {
-		h = 16 - tileColumn;
-	}
-	for(auto yy = 0; yy < h*tileSide; yy++) {
-		auto posY = flipVert ? y + h * tileSide - yy : y+yy;
-		auto divY = yy / tileSide;
-		auto remY = yy % tileSide;
-		auto tileR = tileRow + divY;
-		for(auto xx = 0; xx < w*tileSide; xx++){
-			auto posX = flipHorz ? x + w * tileSide - xx : x+xx;
-			auto divX = xx / tileSide;
-			auto remX = xx % tileSide;
-			auto tileC = tileColumn + divX;
-			auto tileN = (tileR*16)+tileC;
-			//std::cout<<id<<" | "<<idRemainder<<" | "<<tileRow<<" "<<tileColumn<<" | "<<tileR<<" "<<tileC<<" | "<<tileN<<std::endl;
-			auto tileStart = pageStart + tileN*64;
-			auto colorPos = tileStart + remY*tileSide + remX;
-			auto pixelColor = tiles[colorPos];
-			posiPutPixel(posX,posY, pixelColor);
-		}
-	}
+    if (id < 0 || id >= numTiles || w <= 0 || h <= 0) {
+        return;
+    }
+
+    const int pageNum = id / tilesPerPage;
+    const int idRemainder = id % tilesPerPage;
+    const int startTileCol = idRemainder % PAGE_GRID_WIDTH; 
+    const int startTileRow = idRemainder / PAGE_GRID_WIDTH;
+
+    if (startTileCol + w > PAGE_GRID_WIDTH) {
+        w = PAGE_GRID_WIDTH - startTileCol;
+    }
+    if (startTileRow + h > PAGE_GRID_HEIGHT) {
+        h = PAGE_GRID_HEIGHT - startTileRow;
+    }
+
+    for (int ty = 0; ty < h; ++ty) {
+        for (int tx = 0; tx < w; ++tx) { 
+
+            const int currentTileCol = startTileCol + tx;
+            const int currentTileRow = startTileRow + ty;
+            const int tileN = (currentTileRow * PAGE_GRID_WIDTH) + currentTileCol;
+
+            const int pageStart = pageNum * tilesPerPage * tileSide * tileSide;
+            const int tilePixelDataStart = pageStart + tileN * (tileSide * tileSide);
+
+            const int screenTileX = x + (tx * tileSide);
+            const int screenTileY = y + (ty * tileSide);
+
+            for (int py = 0; py < tileSide; ++py) { 
+                const int screenPixelY = screenTileY + py;
+
+                if (screenPixelY < 0 || screenPixelY >= screenHeight) {
+                    continue;
+                }
+                
+                for (int px = 0; px < tileSide; ++px) {
+                    const int screenPixelX = screenTileX + px;
+
+                    if (screenPixelX < 0 || screenPixelX >= screenWidth) {
+                        continue;
+                    }
+
+                    int srcPixelX = flipHorz ? (tileSide - 1 - px) : px;
+                    int srcPixelY = flipVert ? (tileSide - 1 - py) : py;
+
+                    int colorPos = tilePixelDataStart + srcPixelY * tileSide + srcPixelX;
+                    int pixelColor = tiles[colorPos];
+
+                    posiPutPixel(screenPixelX, screenPixelY, pixelColor);
+                }
+            }
+        }
+    }
 }
+
 
 uint16_t posiAPIGetTilemapEntry(int tilemapNum, int tmx, int tmy) {
 	if(tilemapNum < 0 ||tilemapNum >= numTilemaps||tmx<0||tmx>=tilemapTotalWidthTiles||tmy <0 || tmy >= tilemapTotalHeightTiles)
@@ -193,52 +219,98 @@ void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy,uint16_t entry){
 	tilemaps[tilemapNum][tmy*tilemapTotalWidthTiles+tmx] = entry;
 }
 
-void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y) {
-	if(tilemapNum<0||tilemapNum>=numTilemaps)
-		return;
-	if(tmx<0||tmx>=tilemapTotalWidthTiles*tileSide||tmy<0||tmy>=tilemapTotalHeightTiles*tileSide)
-		return;
-	if(tmw<0||tmh<0)
-		return;
-	if(x<0||x>=screenWidth||y<0||y>=screenHeight)
-		return;
-	auto maxX = x+tmw>=screenWidth?screenWidth-1:x+tmw-1;
-	auto maxY = y+tmh>=screenHeight?screenHeight-1:y+tmh-1;
-	for(auto yy = y;yy<=maxY; yy++) {
-		auto tmyy = (tmy+(yy-y))%(tilemapTotalHeightTiles*tileSide);
-		auto tmTileY = tmyy / tileSide;
-		auto tmPixelY = tmyy % tileSide;
-		for(auto xx = x;xx<=maxX;xx++){
-			auto tmxx = (tmx+(xx-x))%(tilemapTotalWidthTiles*tileSide);
-			auto tmTileX = tmxx / tileSide;
-			auto tmPixelX = tmxx % tileSide;
-			auto tileAddr = tmTileY*tilemapTotalWidthTiles+tmTileX;
-			auto tileNum = tilemaps[tilemapNum][tileAddr];
-			auto realTileNum = tileNum & 0x3FFF;
-			if(realTileNum >= numTiles) {
-				continue;
-			}
-			//if(tileNum != 0) {
-			//	std::cout<<tmTileX<<" "<<tmTileY<<" "<<tileNum<<" "<<realTileNum<<std::endl;
-			//}
-			
-			if(tileNum & 0x8000) {
-				tmPixelX = tileSide - 1 - tmPixelX;
-			}
-
-			if(tileNum & 0x4000) {
-				tmPixelY = tileSide - 1  - tmPixelY;
-			}
-			auto pageNum = realTileNum / tilesPerPage;
-			auto idRemainder = realTileNum % tilesPerPage;
-			auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-			auto tileStart = pageStart + idRemainder * 64;
-			auto pixelPos = tileStart + tmPixelY*tileSide+tmPixelX;
-			auto color = tiles[pixelPos];
-			posiPutPixel(xx, yy,color);
-		}
-	}
+int floor_div(int a, int b) {
+    int res = a / b;
+    return (a % b != 0 && (a < 0) != (b < 0)) ? res - 1 : res;
 }
+
+void posiAPIDrawTilemap(int tilemapNum, int tmx, int tmy, int tmw, int tmh, int x, int y) {
+	static constexpr int TILE_FLIP_H_FLAG = 0x8000;
+	static constexpr int TILE_FLIP_V_FLAG = 0x4000;
+	static constexpr int TILE_ID_MASK     = 0x3FFF;
+    if (tilemapNum < 0 || tilemapNum >= numTilemaps) return;
+    if (tmw <= 0 || tmh <= 0) return;
+    int drawX = x;
+    int drawY = y;
+    int drawW = tmw;
+    int drawH = tmh;
+
+    int srcX = tmx;
+    int srcY = tmy;
+
+    if (drawX < 0) {
+        srcX += -drawX;
+        drawW -= -drawX;
+        drawX = 0;
+    }
+    if (drawY < 0) {
+        srcY += -drawY;
+        drawH -= -drawY;
+        drawY = 0;
+    }
+    if (drawX + drawW > screenWidth) {
+        drawW = screenWidth - drawX;
+    }
+    if (drawY + drawH > screenHeight) {
+        drawH = screenHeight - drawY;
+    }
+
+    if (drawW <= 0 || drawH <= 0) {
+        return;
+    }
+
+    int startTileX = floor_div(srcX, tileSide);
+    int startTileY = floor_div(srcY, tileSide);
+    int endTileX = floor_div(srcX + drawW - 1, tileSide);
+    int endTileY = floor_div(srcY + drawH - 1, tileSide);
+
+    for (int ty = startTileY; ty <= endTileY; ++ty) {
+        for (int tx = startTileX; tx <= endTileX; ++tx) {
+            int wrappedTileX = tx % tilemapTotalWidthTiles;
+            if (wrappedTileX < 0) wrappedTileX += tilemapTotalWidthTiles;
+            
+            int wrappedTileY = ty % tilemapTotalHeightTiles;
+            if (wrappedTileY < 0) wrappedTileY += tilemapTotalHeightTiles;
+
+            int tileAddr = wrappedTileY * tilemapTotalWidthTiles + wrappedTileX;
+            int tileNum = tilemaps[tilemapNum][tileAddr];
+            int realTileNum = tileNum & TILE_ID_MASK;
+
+            if (realTileNum >= numTiles) continue;
+
+            bool flipH = (tileNum & TILE_FLIP_H_FLAG) != 0;
+            bool flipV = (tileNum & TILE_FLIP_V_FLAG) != 0;
+            
+            int screenTileX = drawX + (tx * tileSide) - srcX;
+            int screenTileY = drawY + (ty * tileSide) - srcY;
+
+            for (int pixelY = 0; pixelY < tileSide; ++pixelY) {
+                int finalScreenY = screenTileY + pixelY;
+
+                if (finalScreenY < drawY || finalScreenY >= drawY + drawH) continue;
+                
+                for (int pixelX = 0; pixelX < tileSide; ++pixelX) {
+                    int finalScreenX = screenTileX + pixelX;
+                    
+                    if (finalScreenX < drawX || finalScreenX >= drawX + drawW) continue;
+                    
+                    int srcPixelX = flipH ? (tileSide - 1 - pixelX) : pixelX;
+                    int srcPixelY = flipV ? (tileSide - 1 - pixelY) : pixelY;
+
+                    int pageNum = realTileNum / tilesPerPage;
+                    int idRemainder = realTileNum % tilesPerPage;
+                    int tileStart = (pageNum * tilesPerPage + idRemainder) * (tileSide * tileSide);
+                    int pixelPos = tileStart + srcPixelY * tileSide + srcPixelX;
+                    
+                    int color = tiles[pixelPos];
+
+                    posiPutPixel(finalScreenX, finalScreenY, color);
+                }
+            }
+        }
+    }
+}
+
 
 void posiAPIDrawLine(int x1, int y1, int x2,int y2, uint32_t color) {
 	//x1 = std::clamp(x1,0,screenWidth-1);
