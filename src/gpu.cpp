@@ -11,12 +11,14 @@ std::array<uint32_t, numTilesPixels> tiles;
 std::array<uint16_t, tilemapTotalTiles> tilemaps[numTilemaps];
 
 void posiPutPixel(int x, int y, uint32_t color) {
-	if(color == 0 || x < 0 || x >= screenWidth || y < 0 || y >= screenHeight) {
+	static constexpr uint32_t COLOR_ALPHA_MASK = 0xFF000000;
+	if (x < 0 || x >= screenWidth || y < 0 || y >= screenHeight || (color & COLOR_ALPHA_MASK) == 0) {
 		return;
 	}
-	if(!(color&0xFF000000)) return;
+	
 	frameBuffer[y * screenWidth + x] = color;
 }
+
 
 void posiAPICls(uint32_t color) {
 	color = 0xFF000000 | color;
@@ -145,10 +147,9 @@ void gpuLoad() {
 	loadTilemaps();
 }
 
-static constexpr int PAGE_GRID_WIDTH = 16; 
-static constexpr int PAGE_GRID_HEIGHT = 16; 
-
 void posiAPIDrawSprite(int id, int w, int h, int x, int y, bool flipHorz, bool flipVert) {
+	static constexpr int PAGE_GRID_WIDTH = 16; 
+	static constexpr int PAGE_GRID_HEIGHT = 16; 
     if (id < 0 || id >= numTiles || w <= 0 || h <= 0) {
         return;
     }
@@ -483,77 +484,103 @@ void posiAPIDrawFilledTriangle(int x1, int y1, int x2, int y2, int x3, int y3, u
     }
 }
 
-int posiAPIDrawText(const std::string& text, int x, int y, bool proportional, uint32_t color,int start){
-	if(x <0 || y < 0 || start < 0 || start >= numTiles) {
-		return 0;
-	}
-	auto textWidth = 0;
-	auto textHeight = 0;
-	auto charStartX = x;
-	auto charStartY = y;
-	
-	auto lineHeight = 0;
-	
-	for(char ch : text) {
-		if(charStartX>=screenWidth || charStartY >= screenHeight) { break; }
+int posiAPIDrawText(const std::string& text, int x, int y, bool proportional, uint32_t color, int fontTileStart) {
+    constexpr uint32_t TRANSPARENT_COLOR = 0x00000000;
+    constexpr int ASCII_OFFSET = 32;
+    constexpr int TAB_WIDTH_IN_CHARS = 4;
+    constexpr int PROPORTIONAL_SPACE_WIDTH = 4; 
 
-		if(ch == '\n') {
-			charStartX = x;
-			auto g = proportional ? lineHeight+1 : tileSide;
-			charStartY += g;
-			textHeight += g;
-			continue;
-		} else if(ch == '\t') {
-			constexpr auto tabStopWidth = 4 * tileSide;
-			auto addAmount = tabStopWidth - (charStartX % tabStopWidth);
-			charStartX += addAmount;
-			textWidth += addAmount;
-			continue;
-		} else if (ch < ' '|| ch > 127) { continue; }
-		
-		auto tileId = start + ch - 32;
-		if(tileId >= numTiles) {
-			continue;
-		}
-		auto tileStart = tileId * tileSide * tileSide;
-		
-		//get bounding box
-		auto horzMin = 0;
-		auto horzMax = -1;
-		if(proportional) {
-			for (auto tileY = 0; tileY < tileSide; tileY++) {
-				for (auto tileX = 0; tileX < tileSide; tileX++) {
-					auto tilePixelColor = tiles[tileStart+tileY*tileSide+tileX];
-					if(tilePixelColor != 0x00000000) {
-						if(horzMin == 0 || tileX < horzMin) {horzMin = tileX;}
-						if(tileX > horzMax) {horzMax = tileX;}
-						if(tileY > lineHeight) {lineHeight = tileY;}
-					}
-				}
-			}	
-		} else {
-			horzMax = tileSide - 1;
-			lineHeight = tileSide - 1;
-		}
-		if(horzMax == -1) {
-			auto g = proportional ? 4 : tileSide;
-			charStartX += g;
-			textWidth += g;
-			continue;
-		} 
-		for (auto tileY = 0; tileY <= lineHeight; tileY++) {
-			for (auto tileX = horzMin; tileX <= horzMax; tileX++) {
-				auto xxxx = tileX - horzMin;
-				auto c = tiles[tileStart+tileY*tileSide+tileX];
-				if(c != 0x00000000) {
-					posiAPIPutPixel(charStartX+xxxx, charStartY+tileY, color);
-				}
-			}
-		}
-		auto g = proportional ? horzMax - horzMin + 1 + 1 : tileSide;
-		charStartX += g;
-		textWidth += g;
-		
-	}
-	return textWidth;
+    if (x < 0 || y < 0 || fontTileStart < 0 || fontTileStart >= numTiles) {
+        return 0;
+    }
+
+    int cursorX = x;
+    int cursorY = y;
+    int totalWidth = 0;
+    int currentLineHeight = 0;
+
+    for (const char ch : text) {
+        if (cursorX >= screenWidth || cursorY >= screenHeight) {
+            break; 
+        }
+
+        if (ch == '\n') {
+            cursorX = x;
+            int yAdvance = proportional ? (currentLineHeight + 1) : tileSide;
+            cursorY += yAdvance;
+            currentLineHeight = 0;
+            continue;
+        }
+
+        if (ch == '\t') {
+            const int tabStopWidthPixels = TAB_WIDTH_IN_CHARS * tileSide;
+            int advanceAmount = tabStopWidthPixels - ((cursorX - x) % tabStopWidthPixels);
+            cursorX += advanceAmount;
+            totalWidth += advanceAmount;
+            continue;
+        }
+
+        if (ch < ' ' || ch > 127) {
+            continue;
+        }
+
+        const int tileId = fontTileStart + ch - ASCII_OFFSET;
+        if (tileId >= numTiles) {
+            continue;
+        }
+
+        const int tileDataOffset = tileId * tileSide * tileSide;
+
+        int charPixelWidth = tileSide;
+        int charPixelHeight = tileSide;
+        int horzMin = tileSide;
+        int horzMax = -1;     
+        int vertMax = -1;
+
+        if (proportional) {
+            for (int tileY = 0; tileY < tileSide; ++tileY) {
+                for (int tileX = 0; tileX < tileSide; ++tileX) {
+                    if (tiles[tileDataOffset + tileY * tileSide + tileX] != TRANSPARENT_COLOR) {
+                        if (tileX < horzMin) horzMin = tileX;
+                        if (tileX > horzMax) horzMax = tileX;
+                        if (tileY > vertMax) vertMax = tileY;
+                    }
+                }
+            }
+
+            if (horzMax != -1) { 
+                charPixelWidth = horzMax - horzMin + 1;
+                charPixelHeight = vertMax + 1;
+            } else {
+                charPixelWidth = PROPORTIONAL_SPACE_WIDTH;
+                horzMin = 0; 
+            }
+        } else {
+             horzMin = 0;
+             horzMax = tileSide - 1;
+             vertMax = tileSide - 1;
+        }
+
+        if (proportional && vertMax > currentLineHeight) {
+            currentLineHeight = vertMax;
+        }
+
+        for (int tileY = 0; tileY <= vertMax; ++tileY) {
+            for (int tileX = horzMin; tileX <= horzMax; ++tileX) {
+                uint32_t pixelColor = tiles[tileDataOffset + tileY * tileSide + tileX];
+                if (pixelColor != TRANSPARENT_COLOR) {
+                    // The pixel's position on screen is offset by its position within the tile's bounding box
+                    int pixelDestX = cursorX + (tileX - horzMin);
+                    int pixelDestY = cursorY + tileY;
+                    posiAPIPutPixel(pixelDestX, pixelDestY, color);
+                }
+            }
+        }
+
+        const int charAdvance = proportional ? (charPixelWidth + 1) : tileSide; // +1 for spacing
+        cursorX += charAdvance;
+        totalWidth += charAdvance;
+    }
+
+    return totalWidth;
 }
