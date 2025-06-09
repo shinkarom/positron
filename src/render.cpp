@@ -12,7 +12,6 @@
 #include "posi.h"
 
 SDL_Window* window;
-SDL_Event event;
 SDL_GLContext gl_context;
 GLuint gameTexture;
 ImGuiIO io;
@@ -26,6 +25,13 @@ SDL_AudioStream* stream;
 int16_t* audioBuffer;
 
 constexpr float statusBarHeight = 20.0f;
+bool lastFullscreenState = false;
+
+const uint64_t perf_frequency = SDL_GetPerformanceFrequency();
+uint64_t last_time = SDL_GetPerformanceCounter();
+
+double accumulator = 0.0;
+const double fixed_delta_time = 1.0 / 60.0; // Our target update rate (in seconds)
 
 bool isFileLoaded;
 bool isFullscreen;
@@ -62,12 +68,8 @@ void initOpenGL() {
 	gl_context = SDL_GL_CreateContext(window);
 	gladLoadGL(SDL_GL_GetProcAddress);
 	SDL_GL_MakeCurrent(window, gl_context);
-	SDL_GL_SetSwapInterval(1); 
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
-	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
+	SDL_GL_SetSwapInterval(0); 
 
-	
 	glGenTextures(1, &gameTexture);
 	glBindTexture(GL_TEXTURE_2D, gameTexture);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -78,6 +80,7 @@ void initOpenGL() {
 }
 
 void destroyOpenGL() {
+	glDeleteTextures(1, &gameTexture);
 	SDL_GL_DestroyContext(gl_context);
 }
 
@@ -96,6 +99,9 @@ void posiSDLInit() {
 	audioBuffer = posiAudiofeed();
 	SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO);
 	
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 3);
+	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
 	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
@@ -116,8 +122,8 @@ void posiSDLInit() {
 	initImGUI();
 }
 
-bool drawMenuBar(bool input) {
-	bool result = input;
+bool drawMenuBar() {
+	bool result = false;
 	if (!isFullscreen &&ImGui::BeginMenuBar()) {
 		if (ImGui::BeginMenu("File")) {
 			if (ImGui::MenuItem("Open")) {
@@ -179,46 +185,12 @@ bool drawMenuBar(bool input) {
 	return result;
 }
 
-bool posiSDLTick() {	
-	bool done = false;
-	while(SDL_PollEvent(&event)) {
-		ImGui_ImplSDL3_ProcessEvent(&event);
-		if (event.type == SDL_EVENT_QUIT) {
-			done = true;
-		} else if (event.type == SDL_EVENT_KEY_DOWN) {
-			
-		} else if (event.type == SDL_EVENT_KEY_UP) {
-			if(event.key.scancode == SDL_SCANCODE_F10) {
-				if(!posiReset()){
-					done = true;
-				}
-			}
-			if(event.key.scancode == SDL_SCANCODE_F11){
-				isPaused = !isPaused;
-				if(isPaused) apuClearBuffer();
-			}
-			if((event.key.scancode == SDL_SCANCODE_F12)||(isFullscreen&&event.key.scancode == SDL_SCANCODE_ESCAPE)) {
-				isFullscreen = !isFullscreen;
-			}
-		}
+bool posiSDLRender() {
+	bool result = false;
+	if (isFullscreen != lastFullscreenState) {
+		SDL_SetWindowFullscreen(window, isFullscreen);
+		lastFullscreenState = isFullscreen;
 	}
-	if(!isPaused && !io.WantCaptureKeyboard) {
-		auto kbState = SDL_GetKeyboardState(nullptr);
-		for (int i = 0; i < numInputButtons; i++) {
-			posiUpdateButton(i, kbState[inputScancodes[i]]);
-		 }
-	}
-	 SDL_SetWindowFullscreen(window,isFullscreen);
-	
-	 if(isPaused) {
-		 
-	 } else
-	 if(!posiRun()) {
-		 done = true;
-	 }
-
-	SDL_PutAudioStreamData(stream, audioBuffer, audioFramesPerTick *2 * 2);
-
 	glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, screenWidth, screenHeight, GL_BGRA, GL_UNSIGNED_BYTE, videoBuffer);
 	int w, h;
 	SDL_GetWindowSize(window, &w, &h);
@@ -239,7 +211,9 @@ bool posiSDLTick() {
 	}
 	ImGui::Begin("Positron", nullptr, flags);
 	
-	done = drawMenuBar(done);	
+	if(drawMenuBar()) {
+		result = true;
+	}
 	
 	ImVec2 availableSize = ImGui::GetContentRegionAvail();
 		
@@ -273,15 +247,85 @@ bool posiSDLTick() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 	SDL_GL_SwapWindow(window);
 	
-	return done;
+	return result;
 }
 
-void posiSDLCountTime() {
-	auto currentTime = SDL_GetTicks();
-	if(currentTime < targetTime) {
-		SDL_Delay(targetTime - currentTime);
+bool posiSDLHandleEvents() {
+	bool result = false;
+	
+	SDL_Event event;
+	while(SDL_PollEvent(&event)) {
+		ImGui_ImplSDL3_ProcessEvent(&event);
+		if (event.type == SDL_EVENT_QUIT) {
+			result = true;
+		} else if (event.type == SDL_EVENT_KEY_DOWN) {
+			
+		} else if (event.type == SDL_EVENT_KEY_UP) {
+			if(event.key.scancode == SDL_SCANCODE_F10) {
+				if(!posiReset()){
+					result = true;
+				}
+			}
+			if(event.key.scancode == SDL_SCANCODE_F11){
+				isPaused = !isPaused;
+				if(isPaused) apuClearBuffer();
+			}
+			if((event.key.scancode == SDL_SCANCODE_F12)||(isFullscreen&&event.key.scancode == SDL_SCANCODE_ESCAPE)) {
+				isFullscreen = !isFullscreen;
+			}
+		}
 	}
-	targetTime = SDL_GetTicks() + msPerTick;
+	
+	return result;
+}
+
+bool posiSDLEmulate() {
+	bool result = false;
+	
+	if(!isPaused && !io.WantCaptureKeyboard) {
+		auto kbState = SDL_GetKeyboardState(nullptr);
+		for (int i = 0; i < numInputButtons; i++) {
+			posiUpdateButton(i, kbState[inputScancodes[i]]);
+		 }
+	}
+	
+	 if(!isPaused) {
+		if(!posiRun()) {
+			result = true;
+		} 
+	 }
+	 
+	 
+	SDL_PutAudioStreamData(stream, audioBuffer, audioFramesPerTick *2 * 2); 
+	return result;
+}
+
+bool posiSDLTick() {	
+	if(posiSDLHandleEvents()) {
+		return true;
+	}
+	
+    uint64_t current_time = SDL_GetPerformanceCounter();
+    double delta_time = (double)(current_time - last_time) / perf_frequency;
+    last_time = current_time;
+
+    accumulator += delta_time;
+	if (accumulator > 0.25) {
+        accumulator = 0.25;
+    }
+	
+
+    while (accumulator >= fixed_delta_time) {
+        if(posiSDLEmulate()) {
+			return true;
+		}
+
+        accumulator -= fixed_delta_time;
+    }
+
+	posiSDLRender();
+	
+	return false;
 }
 
 void posiSDLDestroy() {

@@ -40,7 +40,6 @@ int main(int argc, char *argv[])
 
 	while(!done) {	
 		done = posiSDLTick();
-		posiSDLCountTime();
 	}
 	
 	posiSDLDestroy();
