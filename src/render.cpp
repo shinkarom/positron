@@ -153,7 +153,7 @@ bool drawMenuBar() {
 				isPaused = !isPaused;
 			}
 			if (ImGui::MenuItem("Reset", nullptr, false)) {
-				posiSDLLoadFile(filename);
+				posiReset();
 				
 			}
 			if (ImGui::MenuItem("Clear Saves", nullptr, false)) {

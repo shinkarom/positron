@@ -833,6 +833,7 @@ int removeLuaFunction(lua_State *L, const char *functionName, const char *tableN
 }
 
 void luaInit() {
+	luaDeinit();
     L = luaL_newstate();   // Create a new Lua stat
 	// Create the _MODULE_CACHE table in Lua (global table)
     lua_newtable(L);
@@ -876,7 +877,7 @@ bool luaLoad() {
 void luaDeinit() {
     if (L) {
         lua_close(L); // Close the Lua state, releasing resources
-        L = NULL;      // Good practice to set the global state pointer to NULL
+        L = nullptr;      // Good practice to set the global state pointer to NULL
     }
 }
 
