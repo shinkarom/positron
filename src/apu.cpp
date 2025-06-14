@@ -35,12 +35,16 @@ void apuProcess() {
 	}
 }
 
-void apuReset() {
+void apuClear() {
 	apuClearBuffer();
 	for(int i = 0; i<numAudioChannels; i++) {
 		chips[i].reset();
 		notes[i] = -1;
 	}
+}
+
+void apuReset() {
+	apuClear();
 }
 
 void posiAPISetOperatorParameter(int channelNumber, uint8_t operatorNumber, uint8_t parameter,float value) {

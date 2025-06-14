@@ -39,8 +39,22 @@ bool posiRun() {
 
 void posiUnload() {
 	dbDisconnect();
+
 	loadedFileName = "";
 	posiChangeState(POSI_STATE_EMPTY);
+	apuClear();
+	gpuClear();
+	luaClear();
+}
+
+bool posiLoad() {
+	if(loadedFileName == "") {
+		return false;
+	}
+	posiChangeState(POSI_STATE_GAME);
+	gpuLoad();
+	
+	return luaLoad();
 }
 
 bool posiLoad(std::string fileName) {
@@ -48,16 +62,18 @@ bool posiLoad(std::string fileName) {
 		return false;
 	}
 	loadedFileName = fileName;
-	posiChangeState(POSI_STATE_GAME);
-	gpuLoad();
-	
-	return luaLoad();
+	return posiLoad();
+}
+
+void posiClear() {
+	apuClear();
+	gpuClear();
+	luaClear();
 }
 
 bool posiReset() {
-	apuReset();
-	gpuReset();
-	return luaReset();
+	posiClear();
+	return posiLoad();
 }
 
 void posiChangeState(int newState) {

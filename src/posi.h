@@ -38,14 +38,18 @@ constexpr auto numSlots = 64;
 
 extern bool isFileLoaded;
 
-std::optional<std::vector<uint8_t>> dbLoadByName(std::string tableName, std::string name);
-std::optional<std::vector<uint8_t>> dbLoadByNumber(std::string tableName, int number);
-bool dbSlotSave(int number, std::vector<uint8_t>& value);
-std::optional<std::vector<uint8_t>> dbSlotLoad(int number);
-bool dbTryConnect(std::string fileName);
+std::optional<std::vector<uint8_t>> dbLoadByName(const std::string& type, const std::string& name);
+std::optional<std::vector<uint8_t>> dbLoadByNumber(const std::string& type, int number);
+bool dbSlotSave(int slotNum, const std::vector<uint8_t>& value);
+std::optional<std::vector<uint8_t>> dbSlotLoad(int slotNum);
+bool dbIsSlotPresent(int slotNum);
+bool dbSlotDelete(int slotNum);
+bool dbSlotDeleteAll();
+bool dbTryConnect(const std::string& fileName);
 void dbDisconnect();
 
 void luaInit();
+void luaClear();
 bool luaLoad();
 void luaDeinit();
 bool luaCallTick();
@@ -58,6 +62,7 @@ void posiPoweron();
 void posiPoweroff();
 bool posiRun();
 bool posiLoad(std::string fileName);
+void posiClear();
 bool posiReset();
 void posiUnload();
 int16_t* posiAudiofeed();
@@ -92,6 +97,7 @@ void posiAPISetTilemapEntry(int tilemapNum, int tmx, int tmy, uint16_t entry);
 
 void apuInit();
 void apuClearBuffer();
+void apuClear();
 void apuProcess();
 void apuReset();
 bool apuLoadFile(std::vector<uint8_t>& file);
@@ -110,10 +116,6 @@ void posiUpdateButton(int buttonNumber, bool state);
 bool API_isPressed(int buttonNumber);
 bool API_isJustPressed(int buttonNumber);
 bool API_isJustReleased(int buttonNumber);
-
-bool posiAPIIsSlotPresent(int slotNum);
-bool posiAPISlotDelete(int slotNum);
-bool posiAPISlotDeleteAll();
 
 bool posiStateGameRun();
 

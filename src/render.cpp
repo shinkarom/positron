@@ -64,6 +64,12 @@ bool posiSDLLoadFile(std::string fileName) {
 	return result;
 }
 
+void posiSDLUnload() {
+	posiUnload();
+	isFileLoaded = false;
+	filename = "";
+}
+
 void initOpenGL() {
 	gl_context = SDL_GL_CreateContext(window);
 	gladLoadGL(SDL_GL_GetProcAddress);
@@ -135,7 +141,7 @@ bool drawMenuBar() {
 				// Open file action
 			}
 			if (ImGui::MenuItem("Unload")) {
-				posiUnload();
+				posiSDLUnload();
 			}
 			if (ImGui::MenuItem("Exit")) {
 				result = true;
@@ -157,7 +163,7 @@ bool drawMenuBar() {
 				
 			}
 			if (ImGui::MenuItem("Clear Saves", nullptr, false)) {
-				posiAPISlotDeleteAll();
+				dbSlotDeleteAll();
 			}
 			ImGui::EndMenu();
 		}

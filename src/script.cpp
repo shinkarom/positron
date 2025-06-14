@@ -642,7 +642,7 @@ static int lua_posiAPIIsSlotPresent(lua_State *L) {
     int slotNum = luaL_checkinteger(L, 1); // 1 is the index of the first argument
 
     // Call the original C function
-    bool is_present = posiAPIIsSlotPresent(slotNum);
+    bool is_present = dbIsSlotPresent(slotNum);
 
     // Push the boolean result onto the Lua stack
     lua_pushboolean(L, is_present);
@@ -717,7 +717,7 @@ static int lua_posiAPISlotDelete(lua_State *L) {
     switch (num_args) {
         case 0:
             // No arguments: call posiAPISlotDeleteAll
-            success = posiAPISlotDeleteAll();
+            success = dbSlotDeleteAll();
             lua_pushboolean(L, success);
             return 1; // Return 1 result (the boolean)
 
@@ -726,7 +726,7 @@ static int lua_posiAPISlotDelete(lua_State *L) {
             // luaL_checkinteger is safer as it validates the type
             int slotNum = luaL_checkinteger(L, 1); // Get the first argument
 
-            success = posiAPISlotDelete(slotNum);
+            success = dbSlotDelete(slotNum);
             lua_pushboolean(L, success);
             return 1; // Return 1 result (the boolean)
         }
@@ -881,9 +881,13 @@ void luaDeinit() {
     }
 }
 
-bool luaReset() {
+void luaClear() {
 	luaDeinit();
 	luaInit();
+}
+
+bool luaReset() {
+	luaClear();
 	return luaLoad();	
 }
 
