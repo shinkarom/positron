@@ -40,11 +40,6 @@ extern bool isFileLoaded;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(const std::string& type, const std::string& name);
 std::optional<std::vector<uint8_t>> dbLoadByNumber(const std::string& type, int number);
-bool dbSlotSave(int slotNum, const std::vector<uint8_t>& value);
-std::optional<std::vector<uint8_t>> dbSlotLoad(int slotNum);
-bool dbIsSlotPresent(int slotNum);
-bool dbSlotDelete(int slotNum);
-bool dbSlotDeleteAll();
 bool dbTryConnect(const std::string& fileName);
 void dbDisconnect();
 

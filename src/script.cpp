@@ -598,110 +598,7 @@ static int l_posiAPISetPitchBend(lua_State *L) {
   posiAPISetPitchBend(channelNumber, value);
   return 0;
 }
-/*
-static int lua_posiAPIIsSlotPresent(lua_State *L) {
-    // Check and get the integer argument from the stack.
-    // luaL_checkinteger is safer than lua_tointeger as it throws an error
-    // if the argument is not an integer or convertible to one.
-    int slotNum = luaL_checkinteger(L, 1); // 1 is the index of the first argument
 
-    // Call the original C function
-    bool is_present = dbIsSlotPresent(slotNum);
-
-    // Push the boolean result onto the Lua stack
-    lua_pushboolean(L, is_present);
-
-    // Return the number of results pushed onto the stack (1 in this case)
-    return 1;
-}
-
-// Function to save a string from Lua to storage
-// Lua signature: success = slotSaveString(slotNum, dataString)
-// Returns: boolean
-int lua_slotSave(lua_State* L) {
-    // Check arguments: 1 number (slotNum), 1 string (dataString)
-    if (lua_gettop(L) != 2 || !lua_isnumber(L, 1) || !lua_isstring(L, 2)) {
-        // Use luaL_check* functions for more specific errors if preferred
-        luaL_error(L, "Invalid arguments for slotSaveString(slotNum, dataString). Expected number, string.");
-        return 0; // luaL_error jumps out, doesn't actually return
-    }
-
-    int slotNum = static_cast<int>(lua_tointeger(L, 1));
-    size_t data_len;
-    const char* dataString = lua_tolstring(L, 2, &data_len); // Get the string and its length
-
-    // Convert the Lua string data (const char*, size_t) to std::vector<uint8_t>
-    std::vector<uint8_t> data_to_save(dataString, dataString + data_len);
-
-    // Call the external C++ function to save the vector
-    bool storage_save_success = dbSlotSave(slotNum, data_to_save);
-
-    // Push the result onto the Lua stack
-    lua_pushboolean(L, storage_save_success);
-
-    // Return the number of results pushed onto the stack
-    return 1; // Pushed 1 result (the boolean)
-}
-
-// Function to load a string from storage for Lua
-// Lua signature: dataString = slotLoadString(slotNum)
-// Returns: string or nil
-int lua_slotLoad(lua_State* L) {
-    // Check arguments: 1 number (slotNum)
-    if (lua_gettop(L) != 1 || !lua_isnumber(L, 1)) {
-        luaL_error(L, "Invalid argument for slotLoadString(slotNum). Expected number.");
-        return 0; // luaL_error jumps out
-    }
-
-    int slotNum = static_cast<int>(lua_tointeger(L, 1));
-
-    // Call the external C++ function to load the vector<uint8_t>
-    std::optional<std::vector<uint8_t>> loaded_data = dbSlotLoad(slotNum);
-
-    // Check if loading succeeded (empty vector indicates no data or error)
-    if (!loaded_data) {
-        std::cerr << "C++ Load String: No save data found or failed to load data for slot " << slotNum << std::endl;
-        // Push nil onto the Lua stack to indicate no data
-        lua_pushnil(L);
-    } else {
-        // Convert the std::vector<uint8_t> data back to a Lua string
-        // Use lua_pushlstring to handle potential embedded nulls correctly
-        lua_pushlstring(L, reinterpret_cast<const char*>(loaded_data->data()), loaded_data->size());
-    }
-
-    // Return the number of results pushed onto the stack (either string or nil)
-    return 1; // Pushed 1 result
-}
-
-static int lua_posiAPISlotDelete(lua_State *L) {
-    // Get the number of arguments on the stack
-    int num_args = lua_gettop(L);
-    bool success = false;
-
-    switch (num_args) {
-        case 0:
-            // No arguments: call posiAPISlotDeleteAll
-            success = dbSlotDeleteAll();
-            lua_pushboolean(L, success);
-            return 1; // Return 1 result (the boolean)
-
-        case 1: {
-            // One argument: check if it's an integer and call posiAPISlotDelete
-            // luaL_checkinteger is safer as it validates the type
-            int slotNum = luaL_checkinteger(L, 1); // Get the first argument
-
-            success = dbSlotDelete(slotNum);
-            lua_pushboolean(L, success);
-            return 1; // Return 1 result (the boolean)
-        }
-
-        default:
-            // Incorrect number of arguments
-            luaL_error(L, "Expected 0 or 1 argument, but received %d", num_args);
-            return 0; // luaL_error does not return, but for completeness
-    }
-}
-*/
 // Error handler function to be used with lua_pcall, using luaL_traceback
 static int tracebackErrorHandler(lua_State *L) {
     // 'luaL_traceback' expects the error message to be at the top of the stack (index -1)
@@ -740,10 +637,6 @@ static const struct luaL_Reg api_funcs[] = {
     {"setSustain", l_posiAPISetSustain},
     {"setModWheel", l_posiAPISetModWheel},
     {"setPitchBend", l_posiAPISetPitchBend},
-	//{"isSlotPresent", lua_posiAPIIsSlotPresent},
-	//{"slotSave", lua_slotSave},
-	//{"slotLoad", lua_slotLoad},
-	//{"slotDelete", lua_posiAPISlotDelete},
     {NULL, NULL} // Sentinel value to mark the end of the array
 };
 
