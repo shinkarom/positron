@@ -56,21 +56,6 @@ uint32_t gpuGetTilePagePixel(int pageNum, int x, int y) {
 	return tiles[pxAddress];
 }
 
-void gpuSetTilePagePixel(int pageNum, int x, int y, uint32_t color) {
-	if(x < 0 || x >= 128 || y < 0 || y >= 128 || pageNum < 0 || pageNum >= numTilePages) {
-		return;
-	}
-	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto tileRow = y / 8;
-	auto tileCol = x / 8;
-	auto pxRow = y % 8;
-	auto pxCol = x % 8;
-	auto tileNum = tileRow * 16 + tileCol;
-	auto pxAddr = pxRow * 8 + pxCol;
-	auto pxAddress = pageStart + (tileNum * 64) + pxAddr;
-	tiles[pxAddress] = color | 0xFF000000;
-}
-
 uint32_t gpuGetTilePixel(int tileNum, int x, int y) {
 	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
 		return 0xFF000000;
@@ -82,18 +67,6 @@ uint32_t gpuGetTilePixel(int tileNum, int x, int y) {
 	auto pxAddr = tileStart + (y * tileSide) + x;
 	return tiles[pxAddr];
 	
-}
-
-void gpuSetTilePixel(int tileNum, int x, int y, uint32_t color) {
-	if(x < 0 || x >= tileSide || y < 0 || y >= tileSide || tileNum < 0 || tileNum >= numTiles) {
-		return;
-	}
-	auto pageNum = tileNum / tilesPerPage;
-	auto idRemainder = tileNum % tilesPerPage;
-	auto pageStart = pageNum * tilesPerPage*tileSide*tileSide;
-	auto tileStart = pageStart + idRemainder*64;
-	auto pxAddr = tileStart + (y * tileSide) + x;
-	tiles[pxAddr] = color | 0xFF000000;;
 }
 
 void posiRedraw(uint32_t* buffer) {	

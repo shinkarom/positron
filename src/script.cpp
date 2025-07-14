@@ -217,24 +217,6 @@ static int l_posiAPIGetTilePagePixel(lua_State *L) {
   }
 }
 
-static int l_posiAPISetTilePagePixel(lua_State *L) {
-  int n = lua_gettop(L);
-
-  if (n == 4) {
-    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
-      return luaL_error(L, "Expected four integer arguments for posiAPITilePagePixel (set)");
-    }
-    int pageNum = lua_tointeger(L, 1);
-    int x = lua_tointeger(L, 2);
-    int y = lua_tointeger(L, 3);
-    uint32_t color = lua_tointeger(L, 4);
-    gpuSetTilePagePixel(pageNum, x, y, color);
-    return 0;
-  } else {
-    return luaL_error(L, "Wrong number of arguments for posiAPISetTilePagePixel. Expected 4, got %d", n);
-  }
-}
-
 // Lua C function for the posiAPITilePixel pair
 static int l_posiAPIGetTilePixel(lua_State *L) {
   int n = lua_gettop(L);
@@ -251,24 +233,6 @@ static int l_posiAPIGetTilePixel(lua_State *L) {
     return 1;
   } else {
     return luaL_error(L, "Wrong number of arguments for posiAPIGetTilePixel. Expected 3, got %d", n);
-  }
-}
-
-static int l_posiAPISetTilePixel(lua_State *L) {
-  int n = lua_gettop(L);
-
-  if (n == 4) {
-    if (!lua_isinteger(L, 1) || !lua_isinteger(L, 2) || !lua_isinteger(L, 3) || !lua_isinteger(L, 4)) {
-      return luaL_error(L, "Expected four integer arguments for posiAPITilePixel (set)");
-    }
-    int tileNum = lua_tointeger(L, 1);
-    int x = lua_tointeger(L, 2);
-    int y = lua_tointeger(L, 3);
-    uint32_t color = lua_tointeger(L, 4);
-    gpuSetTilePixel(tileNum, x, y, color);
-    return 0;
-  } else {
-    return luaL_error(L, "Wrong number of arguments for posiAPISetTilePixel. Expected 4, got %d", n);
   }
 }
 
@@ -634,7 +598,7 @@ static int l_posiAPISetPitchBend(lua_State *L) {
   posiAPISetPitchBend(channelNumber, value);
   return 0;
 }
-
+/*
 static int lua_posiAPIIsSlotPresent(lua_State *L) {
     // Check and get the integer argument from the stack.
     // luaL_checkinteger is safer than lua_tointeger as it throws an error
@@ -737,7 +701,7 @@ static int lua_posiAPISlotDelete(lua_State *L) {
             return 0; // luaL_error does not return, but for completeness
     }
 }
-
+*/
 // Error handler function to be used with lua_pcall, using luaL_traceback
 static int tracebackErrorHandler(lua_State *L) {
     // 'luaL_traceback' expects the error message to be at the top of the stack (index -1)
@@ -754,9 +718,7 @@ static const struct luaL_Reg api_funcs[] = {
     {"isJustReleased", lua_api_isJustReleased},
     {"drawPixel", lua_api_pixel},
 	{"getTilePagePixel",l_posiAPIGetTilePagePixel},
-	{"setTilePagePixel",l_posiAPISetTilePagePixel},
 	{"getTilePixel",l_posiAPIGetTilePixel},
-	{"setTilePixel",l_posiAPISetTilePixel},
     {"drawSprite", lua_api_drawSprite},
     {"drawTilemap", l_posiAPIDrawTilemap},
 	{"drawLine", l_posiAPIDrawLine},
@@ -778,10 +740,10 @@ static const struct luaL_Reg api_funcs[] = {
     {"setSustain", l_posiAPISetSustain},
     {"setModWheel", l_posiAPISetModWheel},
     {"setPitchBend", l_posiAPISetPitchBend},
-	{"isSlotPresent", lua_posiAPIIsSlotPresent},
-	{"slotSave", lua_slotSave},
-	{"slotLoad", lua_slotLoad},
-	{"slotDelete", lua_posiAPISlotDelete},
+	//{"isSlotPresent", lua_posiAPIIsSlotPresent},
+	//{"slotSave", lua_slotSave},
+	//{"slotLoad", lua_slotLoad},
+	//{"slotDelete", lua_posiAPISlotDelete},
     {NULL, NULL} // Sentinel value to mark the end of the array
 };
 
