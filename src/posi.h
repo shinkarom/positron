@@ -34,8 +34,6 @@ constexpr auto tilemapTotalBytes = tilemapTotalTiles * 2;
 constexpr auto numInputButtons = 12;
 constexpr auto numAudioChannels = 8;
 
-constexpr auto numSlots = 64;
-
 extern bool isFileLoaded;
 
 std::optional<std::vector<uint8_t>> dbLoadByName(const std::string& type, const std::string& name);
@@ -99,7 +97,7 @@ float posiAPIGetOperatorParameter(int channelNumber, uint8_t operatorNumber, uin
 void posiAPISetGlobalParameter(int channelNumber,uint8_t parameter, float value);
 float posiAPIGetGlobalParameter(int channelNumber,uint8_t parameter);
 void posiAPINoteOn(int channelNumber,uint8_t note, uint8_t velocity);
-void posiAPINoteOff(int channelNumber);
+void posiAPINoteOff(int channelNumber, uint8_t note);
 void posiAPISetSustain(int channelNumber,bool enable);
 void posiAPISetModWheel(int channelNumber,uint8_t wheel);
 void posiAPISetPitchBend(int channelNumber,uint16_t value);

@@ -162,9 +162,6 @@ bool drawMenuBar() {
 				posiReset();
 				
 			}
-			if (ImGui::MenuItem("Clear Saves", nullptr, false)) {
-				dbSlotDeleteAll();
-			}
 			ImGui::EndMenu();
 		}
 		ImGui::EndMenuBar();

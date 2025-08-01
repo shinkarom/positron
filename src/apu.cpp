@@ -8,7 +8,6 @@
 std::array<int16_t, audioFramesPerTick*2> soundBuffer;
 chipInterface chips[numAudioChannels];
 std::array<float, audioFramesPerTick> leftBuffer, rightBuffer;
-int notes[numAudioChannels];
 
 int16_t* posiAudiofeed() {
 	return soundBuffer.data();
@@ -39,7 +38,6 @@ void apuClear() {
 	apuClearBuffer();
 	for(int i = 0; i<numAudioChannels; i++) {
 		chips[i].reset();
-		notes[i] = -1;
 	}
 }
 
@@ -79,19 +77,14 @@ void posiAPINoteOn(int channelNumber,uint8_t note, uint8_t velocity) {
 	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
 		return;
 	}
-	if(notes[channelNumber] != -1) {
-		posiAPIReleaseAll(channelNumber);
-	}
 	chips[channelNumber].noteOn(note, velocity);
-	notes[channelNumber] = note;
 }
 
-void posiAPINoteOff(int channelNumber) {
+void posiAPINoteOff(int channelNumber,uint8_t note) {
 	if(channelNumber < 0 || channelNumber >= numAudioChannels) {
 		return;
 	}
-	chips[channelNumber].noteOff(notes[channelNumber]);
-	notes[channelNumber] = -1;
+	chips[channelNumber].noteOff(note);
 }
 
 void posiAPISetSustain(int channelNumber,bool enable) {
@@ -120,5 +113,4 @@ void posiAPIReleaseAll(int channelNumber) {
 		return;
 	}
 	chips[channelNumber].releaseAll();
-	notes[channelNumber] = -1;
 }

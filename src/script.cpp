@@ -550,14 +550,15 @@ static int l_posiAPISetGlobalParameter(lua_State *L) {
 static int l_posiAPINoteOff(lua_State *L) {
   int num_args = lua_gettop(L);
   int channelNumber = luaL_checkinteger(L, 1);
+  int note = luaL_checkinteger(L, 2);
 
-  if (num_args == 1) {
+  if (num_args == 2) {
     // Release All: channelNumber
-    posiAPINoteOff(channelNumber);
+    posiAPINoteOff(channelNumber,note);
     return 0;
   } else {
     // Invalid number of arguments
-    luaL_error(L, "Wrong number of arguments. Expected 1.");
+    luaL_error(L, "Wrong number of arguments. Expected 2.");
     return 0; // Should not reach here
   }
 }
